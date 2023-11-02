@@ -1,9 +1,9 @@
-name: Build and Push Docker Image
+name: Build and Push API for monitoring
 
 on:
   push:
     branches:
-      - expenses
+      - main
 
 jobs:
   build-and-push:
