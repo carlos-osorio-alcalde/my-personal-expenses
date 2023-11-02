@@ -1,0 +1,3 @@
+# Ignore the env files
+**/.expenses.env
+monitoring/.env

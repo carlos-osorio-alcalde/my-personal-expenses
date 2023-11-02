@@ -1,0 +1,42 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - expenses
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      CONTAINER_REGISTRY: expensesapp
+      IMAGE_NAME: expenses-api
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }} --platform linux/amd64 -f Dockerfile .
+
+      - name: Log in to Azure
+        run: |
+          az login 
+          az account set --subscription azure_sponsorhip
+
+      - name: Tag Docker image
+        run: |
+          docker tag ${{ env.IMAGE_NAME }} ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+
+      - name: Log in to ACR
+        run: |
+          az acr login --name ${{ env.CONTAINER_REGISTRY }}
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest

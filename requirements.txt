@@ -1,0 +1,11 @@
+secure-smtplib == 0.1.1
+beautifulsoup4 == 4.12.2
+fastapi == 0.99.1
+python-dotenv == 0.21.1
+uvicorn == 0.23.2
+python-jose == 3.3.0
+pytz == 2023.3
+numpy == 1.25.2
+scikit-learn==1.3.0
+pandas==2.1.0
+neptune==1.6.3
