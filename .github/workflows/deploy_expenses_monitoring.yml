@@ -1,4 +1,4 @@
-name: Build and Push API for base expenses
+name: Build and Push API for both APIs
 
 on:
   push:
