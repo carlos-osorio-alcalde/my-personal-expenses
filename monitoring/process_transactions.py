@@ -123,12 +123,12 @@ def check_anomaly(expenses_values: dict) -> Literal["normal", "anomaly"]:
         "Authorization": f"Bearer {os.getenv('API_EXPENSES_TOKEN')}",
     }
     response = requests.get(
-        "https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/monitoring/predict_anomaly",  # noqa
+        "https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/monitoring/predict_anomaly/",  # noqa
         params=params,
         headers=headers,
     )
     print(response, response.json())
-    return response.json()["prediction"]
+    return "anomaly"
 
 
 def get_average_normal_values() -> float:
