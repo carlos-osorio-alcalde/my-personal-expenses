@@ -1,11 +1,26 @@
-from fastapi import FastAPI
-import pandas as pd
-from typing import Union, List
-from labels.categories import get_merchant_category
-from labels.schemas import Category
-from labels.database import get_cursor
-import pyodbc 
+import os
+import pickle
+from typing import List, Union
 
+import numpy as np
+import pandas as pd
+import pyodbc
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from openai import OpenAI
+
+from labels.categories import get_merchant_category
+from labels.constants import (
+    CATEGORIES_MERCHANTS_FILE_NAME,
+    CATEGORIES_MERCHANTS_FILE_NAME_BACKUP,
+    EMBEDDINGS_FILE_NAME,
+    EMBEDDINGS_FILE_NAME_BACKUP,
+)
+from labels.database import get_cursor
+from labels.schemas import LabeledTransaction, TransactionInfo
+
+# Load environment variables
+load_dotenv()
 
 # Create the app
 app = FastAPI(title="Labels API", version="0.1.0")
@@ -16,75 +31,128 @@ async def index():
     return {"message": "API for the labels merchants working"}
 
 
-# Create the table in the server to store categories
-@app.post("/database/create_table")
-async def create_table():
+# Endpoint to refresh the embeddings
+@app.get("/refresh_embeddings")
+async def refresh_embeddings() -> dict:
     """
-    Create the table in the server to store the categories
-    """
-    cursor = get_cursor()
-    cursor.execute(
-        """
-        CREATE TABLE categories (
-            id INT IDENTITY(1,1) PRIMARY KEY,
-            merchant VARCHAR(255) NOT NULL,
-            category VARCHAR(255) NOT NULL
-        )
-        """
-    )
-    cursor.commit()
-    return {'message': 'Table created successfully'}
-
-# Save labeled categories
-@app.post("/database/save_categories")
-async def save_categories():
-    """
-    Save the labeled categories in the database
+    Refresh the embeddings of the merchants
     """
     cursor = get_cursor(return_conn=False)
-    df = pd.read_csv("labels/expenses_labeled_full.csv", sep=';')
-    
-    for _, row in df.iterrows():
+    cursor.execute(
+        """
+        SELECT DISTINCT
+                merchants,
+                category
+        FROM categories_trx
+        WHERE category IS NOT NULL
+        """
+    )
+    result = cursor.fetchall()
+    cursor.commit()
+
+    # Create the dataframe
+    df = pd.DataFrame(result, columns=["merchant", "category"])
+
+    # Create the embeddings
+    openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    # Compute the embeddings
+    embeddings = openai_client.embeddings.create(
+        input=df["merchant"].tolist(), model="text-embedding-ada-002"
+    ).data
+
+    # Extract the data as a numpy array
+    embeddings = np.array([emb.embedding for emb in embeddings])
+
+    # Codify the categories from string to int
+    categories_codes = {
+        category: i for i, category in enumerate(df["category"].unique())
+    }
+    categories_merchants = dict(
+        zip(df.index, df["category"].map(categories_codes))
+    )
+
+    # Before saving the data, create a backup of the old data
+    if os.path.exists(CATEGORIES_MERCHANTS_FILE_NAME):
+        os.rename(
+            CATEGORIES_MERCHANTS_FILE_NAME,
+            CATEGORIES_MERCHANTS_FILE_NAME_BACKUP,
+        )
+    if os.path.exists(EMBEDDINGS_FILE_NAME):
+        os.rename(EMBEDDINGS_FILE_NAME, EMBEDDINGS_FILE_NAME_BACKUP)
+
+    # Save the categories_merchants as a pickle file
+    with open(CATEGORIES_MERCHANTS_FILE_NAME, "wb") as f:
+        pickle.dump(categories_merchants, f)
+
+    # Save the embeddings as a npy file
+    np.save(EMBEDDINGS_FILE_NAME, embeddings)
+
+    return {"message": "Embeddings refreshed successfully"}
+
+
+# Save labeled categories into the table
+@app.post("/database/save_categories")
+async def save_categories(
+    labeled_transactions: Union[LabeledTransaction, List[LabeledTransaction]]
+) -> dict:
+    """
+    Save the categories into the tables
+
+    Parameters
+    ----------
+    transactions : Union[LabeledTransaction, List[LabeledTransaction]]
+        The labeled transactions
+    """
+    if isinstance(labeled_transactions, LabeledTransaction):
+        labeled_transactions = [labeled_transactions]
+
+    cursor = get_cursor(return_conn=False)
+
+    for transaction in labeled_transactions:
         cursor.execute(
             """
-            INSERT INTO categories (merchant, category)
-            VALUES (?, ?)
+            INSERT INTO categories_trx (merchant, datetime, category, similarity)
+            VALUES (?, ?, ?, ?)
             """,
-            row["merchant"],
-            row["category"]
+            transaction.merchant,
+            transaction.datetime,
+            transaction.category,
+            transaction.similarity,
         )
         cursor.commit()
 
-    return {'message': 'Data saved successfully'}
+    return {"message": "Data saved successfully"}
 
 
 # Create the endpoint for the categories
-@app.post("/get_category")
-async def get_category(merchants: Union[str, List[str]]) -> List[Category]:
+@app.post("/get_category", response_model=List[LabeledTransaction])
+async def get_category(
+    transactions: List[TransactionInfo],
+) -> List[LabeledTransaction]:
     """
     Obtain the category of a merchant.
 
     Parameters
     ----------
-    merchants : Union[str, List[str]]
-        The merchant name, or a list of merchant names
+    merchants : List[TransactionInfo]
+        The transaction information
 
     Returns
     -------
     Category
         The category and the similarity score
     """
-    if merchants is None:
-        return [Category(merchant=None, category=None, similarity=None)]
-
+    merchants = [transaction.merchant for transaction in transactions]
     categories_ = get_merchant_category(merchants)
     return [
-        Category(
-            merchant=merchant,
+        LabeledTransaction(
+            merchant=transaction.merchant,
+            datetime=transaction.datetime,
             category=result_category["category"],
             similarity=result_category["similarity"],
         )
-        for merchant, result_category in zip(merchants, categories_)
+        for transaction, result_category in zip(transactions, categories_)
     ]
 
 

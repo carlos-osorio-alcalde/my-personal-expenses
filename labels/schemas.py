@@ -1,12 +1,29 @@
+import datetime
+
 from pydantic import BaseModel
 
 
-# Model for the response of the categories
-class Category(BaseModel):
+#
+class TransactionInfo(BaseModel):
     """
-    This class represents the category of a merchant.
+    Class that represents the transaction information.
+    """
+
+    transaction_type: str
+    amount: float
+    merchant: str
+    datetime: datetime.datetime
+    paynment_method: str
+    email_log: str | None
+
+
+# Model for the labeled transaction
+class LabeledTransaction(BaseModel):
+    """
+    This class represents a labeled transaction.
     """
 
     merchant: str
+    datetime: datetime.datetime
     category: str
     similarity: float

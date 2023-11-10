@@ -1,29 +1,24 @@
-from openai import OpenAI
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-from typing import Dict, Union, List
-import pickle
 import os
+import pickle
 from collections import Counter
-from dotenv import load_dotenv
+from typing import Dict, List, Union
 
+import numpy as np
+from dotenv import load_dotenv
+from openai import OpenAI
+from sklearn.metrics.pairwise import cosine_similarity
+
+from labels.constants import (
+    CATEGORIES_CODES,
+    CATEGORIES_MERCHANTS_FILE_NAME,
+    EMBEDDINGS_FILE_NAME,
+)
 
 # Load environment variables
 load_dotenv()
 
 # Create the OpenAI object
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# Categories codes
-CATEGORIES_CODES = {
-    0: "comida",
-    1: "mercado",
-    2: "servicios",
-    3: "facturas",
-    4: "carro",
-    5: "diversion",
-    6: "movilidad",
-}
 
 
 def get_merchant_category(
@@ -52,10 +47,10 @@ def get_merchant_category(
     """
 
     # Load the embeddings
-    embeddings_db = np.load("labels/files/embeddings.npy")
+    embeddings_db = np.load(EMBEDDINGS_FILE_NAME)
 
     # Load the categories of the merchants from the pickle file
-    with open("labels/files/categories_merchants.pkl", "rb") as f:
+    with open(CATEGORIES_MERCHANTS_FILE_NAME, "rb") as f:
         categories_db = pickle.load(f)
 
     # Get the embedding for a single word
