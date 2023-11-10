@@ -1,9 +1,9 @@
-EMBEDDINGS_FILE_NAME = "labels/files/embeddings.pkl"
-EMBEDDINGS_FILE_NAME_BACKUP = "labels/files/embeddings_backup.pkl"
+EMBEDDINGS_FILE_NAME = "files/embeddings.pkl"
+EMBEDDINGS_FILE_NAME_BACKUP = "files/embeddings_backup.pkl"
 
-CATEGORIES_MERCHANTS_FILE_NAME = "labels/files/categories_merchants.pkl"
+CATEGORIES_MERCHANTS_FILE_NAME = "files/categories_merchants.pkl"
 CATEGORIES_MERCHANTS_FILE_NAME_BACKUP = (
-    "labels/files/categories_merchants_backup.pkl"
+    "files/categories_merchants_backup.pkl"
 )
 
 # Categories codes
