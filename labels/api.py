@@ -41,7 +41,7 @@ async def refresh_embeddings() -> dict:
     cursor.execute(
         """
         SELECT DISTINCT
-                merchants,
+                merchant,
                 category
         FROM categories_trx
         WHERE category IS NOT NULL
