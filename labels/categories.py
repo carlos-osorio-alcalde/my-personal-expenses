@@ -72,6 +72,17 @@ def get_merchant_category(
             np.sort(np.array(similarity))[::-1][0:top],
         )
 
+        # Check if the first result has more than 0.9 similarity.
+        # If so, add the result and continue to the next word
+        if similarities[0] > 0.9:
+            final_categories.append(
+                {
+                    "category": CATEGORIES_CODES[categories_db[indices[0]]],
+                    "similarity": similarities[0],
+                }
+            )
+            continue
+
         # Get the categories of the words
         categories = [CATEGORIES_CODES[categories_db[f]] for f in indices]
 
