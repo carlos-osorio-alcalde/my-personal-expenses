@@ -33,7 +33,7 @@ def get_transactions(
         The dataframe with all the transactions of the current day.
     """
     # Get the transactions of the current day
-    url = f"https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/expenses/get_full_transactions_day/"  # noqa
+    url = f"https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/expenses/get_full_transactions/?timeframe=daily"  # noqa
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {os.getenv('API_EXPENSES_TOKEN')}",
