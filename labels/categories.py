@@ -3,15 +3,19 @@ import pickle
 from collections import Counter
 from typing import Dict, List, Union
 
+import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
 from openai import OpenAI
 from sklearn.metrics.pairwise import cosine_similarity
 
+from labels.database import get_cursor
 from labels.constants import (
     CATEGORIES_CODES,
     CATEGORIES_MERCHANTS_FILE_NAME,
+    CATEGORIES_MERCHANTS_FILE_NAME_BACKUP,
     EMBEDDINGS_FILE_NAME,
+    EMBEDDINGS_FILE_NAME_BACKUP,
 )
 
 # Load environment variables
@@ -19,6 +23,68 @@ load_dotenv()
 
 # Create the OpenAI object
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
+def update_embeddings() -> None:
+    """
+    This function updates the embeddings of the merchants
+    from the category table
+    """
+    cursor = get_cursor(return_conn=False)
+    cursor.execute(
+        """
+        SELECT DISTINCT
+                merchant,
+                category
+        FROM categories
+        WHERE category IS NOT NULL
+        """
+    )
+    result = cursor.fetchall()
+
+    # Create the dataframe
+    df = pd.DataFrame(
+        data=[list(r) for r in result],
+        columns=[desc[0] for desc in cursor.description],
+    )
+    cursor.close()
+
+    # Create the embeddings
+    openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    # Compute the embeddings
+    embeddings = openai_client.embeddings.create(
+        input=df["merchant"].tolist(), model="text-embedding-ada-002"
+    ).data
+
+    # Extract the data as a numpy array
+    embeddings = np.array([emb.embedding for emb in embeddings])
+
+    # Codify the categories from string to int
+    categories_codes = {
+        category: i for i, category in enumerate(df["category"].unique())
+    }
+    categories_merchants = dict(
+        zip(df.index, df["category"].map(categories_codes))
+    )
+
+    # Before saving the data, create a backup of the old data
+    if os.path.exists(CATEGORIES_MERCHANTS_FILE_NAME):
+        os.rename(
+            CATEGORIES_MERCHANTS_FILE_NAME,
+            CATEGORIES_MERCHANTS_FILE_NAME_BACKUP,
+        )
+    if os.path.exists(EMBEDDINGS_FILE_NAME):
+        os.rename(EMBEDDINGS_FILE_NAME, EMBEDDINGS_FILE_NAME_BACKUP)
+
+    # Save the categories_merchants as a pickle file
+    with open(CATEGORIES_MERCHANTS_FILE_NAME, "wb") as f:
+        pickle.dump(categories_merchants, f)
+
+    # Save the embeddings as a npy file
+    np.save(EMBEDDINGS_FILE_NAME, embeddings)
+
+    return
 
 
 def get_merchant_category(

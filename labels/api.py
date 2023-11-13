@@ -3,19 +3,11 @@ import pickle
 from typing import List, Union
 
 import numpy as np
-import pandas as pd
 import pyodbc
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from openai import OpenAI
 
-from labels.categories import get_merchant_category
-from labels.constants import (
-    CATEGORIES_MERCHANTS_FILE_NAME,
-    CATEGORIES_MERCHANTS_FILE_NAME_BACKUP,
-    EMBEDDINGS_FILE_NAME,
-    EMBEDDINGS_FILE_NAME_BACKUP,
-)
+from labels.categories import get_merchant_category, update_embeddings
 from labels.database import get_cursor
 from labels.schemas import LabeledTransaction, TransactionInfo
 
@@ -24,6 +16,9 @@ load_dotenv()
 
 # Create the app
 app = FastAPI(title="Labels API", version="0.1.0")
+
+# Update the embeddings after the app is created
+update_embeddings()
 
 # Create the base endpoint
 @app.get("/")
@@ -37,58 +32,9 @@ async def refresh_embeddings() -> dict:
     """
     Refresh the embeddings of the merchants
     """
-    cursor = get_cursor(return_conn=False)
-    cursor.execute(
-        """
-        SELECT DISTINCT
-                merchant,
-                category
-        FROM categories_trx
-        WHERE category IS NOT NULL
-        """
-    )
-    result = cursor.fetchall()
-    cursor.commit()
-
-    # Create the dataframe
-    df = pd.DataFrame(result, columns=["merchant", "category"])
-
-    # Create the embeddings
-    openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-    # Compute the embeddings
-    embeddings = openai_client.embeddings.create(
-        input=df["merchant"].tolist(), model="text-embedding-ada-002"
-    ).data
-
-    # Extract the data as a numpy array
-    embeddings = np.array([emb.embedding for emb in embeddings])
-
-    # Codify the categories from string to int
-    categories_codes = {
-        category: i for i, category in enumerate(df["category"].unique())
-    }
-    categories_merchants = dict(
-        zip(df.index, df["category"].map(categories_codes))
-    )
-
-    # Before saving the data, create a backup of the old data
-    if os.path.exists(CATEGORIES_MERCHANTS_FILE_NAME):
-        os.rename(
-            CATEGORIES_MERCHANTS_FILE_NAME,
-            CATEGORIES_MERCHANTS_FILE_NAME_BACKUP,
-        )
-    if os.path.exists(EMBEDDINGS_FILE_NAME):
-        os.rename(EMBEDDINGS_FILE_NAME, EMBEDDINGS_FILE_NAME_BACKUP)
-
-    # Save the categories_merchants as a pickle file
-    with open(CATEGORIES_MERCHANTS_FILE_NAME, "wb") as f:
-        pickle.dump(categories_merchants, f)
-
-    # Save the embeddings as a npy file
-    np.save(EMBEDDINGS_FILE_NAME, embeddings)
-
-    return {"message": "Embeddings refreshed successfully"}
+    # Update the embeddings
+    update_embeddings()
+    return {"message": "Embeddings updated successfully"}
 
 
 # Save labeled categories into the table
