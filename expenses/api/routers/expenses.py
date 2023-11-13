@@ -112,17 +112,24 @@ async def get_expenses_a_day_like_today() -> SummaryADayLikeToday:
 
 # Create the endpoint to get all the transactions of the current day
 @router.get(
-    "/get_full_transactions_day/",
+    "/get_full_transactions/",
     response_model=List[TransactionInfo],
     dependencies=[Depends(check_access_token)],
 )
-async def get_full_transactions() -> List[TransactionInfo]:
+async def get_full_transactions(
+    timeframe: Literal["daily", "weekly", "partial_weekly", "monthly", "from_origin"]
+) -> List[TransactionInfo]:
     """
     This function returns the full transactions of the current day
+
+    Parameters
+    ----------
+    timeframe : Literal["daily", "weekly", "partial_weekly", "monthly", "from_origin"]
+        The timeframe to obtain the expenses from.
 
     Returns
     -------
     List[TransactionInfo]
         The summary of the expenses of the day, week or month.
     """
-    return get_gross_transactions("daily")
+    return get_gross_transactions(timeframe=timeframe)
