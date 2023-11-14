@@ -6,13 +6,4 @@ CATEGORIES_MERCHANTS_FILE_NAME_BACKUP = (
     "labels/files/categories_merchants_backup.pkl"
 )
 
-# Categories codes
-CATEGORIES_CODES = {
-    0: "comida",
-    1: "mercado",
-    2: "servicios",
-    3: "facturas",
-    4: "carro",
-    5: "diversion",
-    6: "movilidad",
-}
+MAPPING_CATEGORIES_NAMES = "labels/files/mapping_categories_names.pkl"

@@ -11,11 +11,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from labels.database import get_cursor
 from labels.constants import (
-    CATEGORIES_CODES,
     CATEGORIES_MERCHANTS_FILE_NAME,
     CATEGORIES_MERCHANTS_FILE_NAME_BACKUP,
     EMBEDDINGS_FILE_NAME,
     EMBEDDINGS_FILE_NAME_BACKUP,
+    MAPPING_CATEGORIES_NAMES,
 )
 
 # Load environment variables
@@ -36,7 +36,7 @@ def update_embeddings() -> None:
         SELECT DISTINCT
                 merchant,
                 category
-        FROM categories
+        FROM [dbo].[categories]
         WHERE category IS NOT NULL
         """
     )
@@ -64,6 +64,7 @@ def update_embeddings() -> None:
     categories_codes = {
         category: i for i, category in enumerate(df["category"].unique())
     }
+
     categories_merchants = dict(
         zip(df.index, df["category"].map(categories_codes))
     )
@@ -83,6 +84,10 @@ def update_embeddings() -> None:
 
     # Save the embeddings as a npy file
     np.save(EMBEDDINGS_FILE_NAME, embeddings)
+
+    # Save the categories codes as a pickle file
+    with open(MAPPING_CATEGORIES_NAMES, "wb") as f:
+        pickle.dump({v: k for k, v in categories_codes.items()}, f)
 
     return
 
@@ -111,6 +116,9 @@ def get_merchant_category(
     List[Dict[str, float]]
         The most likely category and the similarity score
     """
+    # Load the mapping categories names
+    with open(MAPPING_CATEGORIES_NAMES, "rb") as f:
+        CATEGORIES_CODES = pickle.load(f)
 
     # Load the embeddings
     embeddings_db = np.load(EMBEDDINGS_FILE_NAME)
@@ -162,14 +170,6 @@ def get_merchant_category(
         )
 
     return final_categories
-
-
-def update_categories() -> None:
-    """
-    This function updates the necessary files to compute the
-    similarity between the merchant and the embeddings.
-    """
-    ...
 
 
 if __name__ == "__main__":
