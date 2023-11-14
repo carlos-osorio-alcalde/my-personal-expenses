@@ -125,11 +125,11 @@ def check_anomaly(expenses_values: dict) -> Literal["normal", "anomaly"]:
     response = requests.get(
         "https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/monitoring/predict_anomaly/",  # noqa
         headers=headers,
-        params=params
+        params=params,
     )
     if response.status_code != 200:
         return "normal"
-    
+
     return response.json()["prediction"]
 
 
