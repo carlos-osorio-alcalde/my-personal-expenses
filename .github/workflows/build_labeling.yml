@@ -3,7 +3,7 @@ name: Build and Push API for labeling
 on:
   push:
     branches:
-      - labeling-trx
+      - main
 
 jobs:
   build-and-push:
