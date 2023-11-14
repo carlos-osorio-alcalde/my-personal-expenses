@@ -36,7 +36,7 @@ def update_embeddings() -> None:
         SELECT DISTINCT
                 merchant,
                 category
-        FROM [dbo].[categories]
+        FROM [dbo].[categories_trx]
         WHERE category IS NOT NULL
         """
     )

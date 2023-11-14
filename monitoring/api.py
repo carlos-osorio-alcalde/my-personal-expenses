@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+import json
+import requests
 from monitoring.email import send_email
 from monitoring.process_transactions import (
     get_transactions,
@@ -9,7 +11,45 @@ from monitoring.process_transactions import (
 # Create the app
 app = FastAPI()
 
-# Create the only endpoint to send the email
+# Endpoint to get the daily transactions and save them labeled to the database
+@app.post("/label_and_save_transactions")
+def label_and_save_transactions():
+    """
+    This endpoint gets the daily transactions and saves them labeled to the database
+    """
+    gross_transactions = get_transactions()
+    gross_transactions = [
+        trx
+        for trx in gross_transactions
+        if trx["transaction_type"] == "Compra" and "*" not in trx["merchant"]
+    ]
+
+    url_label_transactions = "https://label-categories.orangecliff-ed60441b.eastus.azurecontainerapps.io/get_category"  # noqa
+    url_save_to_database = "https://label-categories.orangecliff-ed60441b.eastus.azurecontainerapps.io/database/save_categories"  # noqa
+
+    headers = {
+        "accept": "application/json",
+        "Content-Type": "application/json",
+    }
+
+    response_labeling = requests.post(
+        url_label_transactions,
+        headers=headers,
+        data=json.dumps(gross_transactions),
+    )
+    response_save_db = requests.post(
+        url_save_to_database,
+        headers=headers,
+        data=json.dumps(response_labeling.json()),
+    )
+
+    if response_save_db.status_code != 200:
+        return {"status": "Error saving transactions!"}
+
+    return {"status": "Transactions saved succesfully!"}
+
+
+# Endpoint to send the email
 @app.post("/send_daily_report")
 def send_daily_report():
     """

@@ -59,12 +59,22 @@ async def save_categories(
         cursor.execute(
             """
             INSERT INTO categories_trx (merchant, datetime, category, similarity)
-            VALUES (?, ?, ?, ?)
+            SELECT ?, ?, ?, ?
+            WHERE NOT EXISTS (
+                SELECT 1 FROM categories_trx
+                WHERE
+                    merchant = ? AND
+                    datetime = ? AND
+                    category = ?
+            )
             """,
             transaction.merchant,
             transaction.datetime,
             transaction.category,
             transaction.similarity,
+            transaction.merchant,
+            transaction.datetime,
+            transaction.category,
         )
         cursor.commit()
 
