@@ -2,6 +2,7 @@ from .expenses import (
     AddTransactionInfo,
     AnomalyPredictionOutput,
     BaseTransactionInfo,
+    LabeledTransactionInfo,
     SummaryADayLikeToday,
     SummaryTransactionInfo,
 )
@@ -14,4 +15,5 @@ __all__ = [
     "AddTransactionInfo",
     "SummaryADayLikeToday",
     "AnomalyPredictionOutput",
+    "LabeledTransactionInfo",
 ]

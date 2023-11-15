@@ -59,3 +59,15 @@ class AnomalyPredictionOutput(BaseModel):
 
     score: float
     prediction: str
+
+
+# Model for the labeled transaction
+class LabeledTransactionInfo(BaseModel):
+    """
+    This class represents a labeled transaction.
+    """
+
+    merchant: str
+    datetime: datetime.datetime
+    category: str
+    similarity: float

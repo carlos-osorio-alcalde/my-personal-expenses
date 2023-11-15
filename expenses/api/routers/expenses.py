@@ -4,13 +4,18 @@ from typing import List, Literal
 import pytz
 from fastapi import APIRouter, Depends
 
-from expenses.api.schemas import SummaryADayLikeToday, SummaryTransactionInfo
+from expenses.api.schemas import (
+    LabeledTransactionInfo,
+    SummaryADayLikeToday,
+    SummaryTransactionInfo,
+)
 from expenses.api.security import check_access_token
 from expenses.api.utils import (
     get_date_from_search,
     get_summary_a_day_like_today,
     get_transactions,
     get_transactions_from_database,
+    get_transactions_with_labels,
     process_transactions_api_expenses,
 )
 from expenses.processors.schemas import TransactionInfo
@@ -117,7 +122,9 @@ async def get_expenses_a_day_like_today() -> SummaryADayLikeToday:
     dependencies=[Depends(check_access_token)],
 )
 async def get_full_transactions(
-    timeframe: Literal["daily", "weekly", "partial_weekly", "monthly", "from_origin"]
+    timeframe: Literal[
+        "daily", "weekly", "partial_weekly", "monthly", "from_origin"
+    ]
 ) -> List[TransactionInfo]:
     """
     This function returns the full transactions of the current day
@@ -133,3 +140,37 @@ async def get_full_transactions(
         The summary of the expenses of the day, week or month.
     """
     return get_gross_transactions(timeframe=timeframe)
+
+
+# Create the endpoint to get the transactions with the labels
+@router.get(
+    "/get_transactions_with_labels/",
+    response_model=List[LabeledTransactionInfo],
+    dependencies=[Depends(check_access_token)],
+)
+async def obtain_transactions_with_labels(
+    timeframe: Literal[
+        "daily", "weekly", "partial_weekly", "monthly", "from_origin"
+    ]
+) -> List[LabeledTransactionInfo]:
+    """
+    This function returns the transactions with the labels
+
+    Parameters
+    ----------
+    timeframe : Literal["daily", "weekly", "partial_weekly", "monthly", "from_origin"]
+        The timeframe to obtain the expenses from.
+
+    Returns
+    -------
+    List[LabeledTransactionInfo]
+        The summary of the expenses of the day, week or month.
+    """
+    # Get the date to search
+    date_to_search = get_date_from_search(timeframe)
+
+    # Get the transactions
+    transactions = get_transactions_with_labels(date_from=date_to_search)
+
+    # Return the transactions
+    return transactions
