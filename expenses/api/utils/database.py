@@ -6,7 +6,7 @@ import numpy as np
 import pyodbc
 from dotenv import load_dotenv
 
-from expenses.api.schemas import SummaryMerchant
+from expenses.api.schemas import LabeledTransactionInfo, SummaryMerchant
 from expenses.processors.schemas import TransactionInfo
 
 # Check if the file exists
@@ -244,3 +244,57 @@ def get_summary_a_day_like_today(weekday: int) -> Dict:
         summary = {}
 
     return summary
+
+
+def get_transactions_with_labels(
+    date_from: datetime.datetime,
+) -> List[LabeledTransactionInfo]:
+    """
+    This function returns the transactions with the labels.
+
+    Parameters
+    ----------
+    date_from : datetime.datetime
+        The date to search.
+
+    Returns
+    -------
+    List[TransactionInfo]
+        The transactions with the labels.
+    """
+    try:
+        cursor = get_cursor()
+
+        # Get the transactions
+        cursor.execute(
+            """
+            SELECT t.merchant, t.datetime, g.category, g.similarity
+            FROM [dbo].[transactions] AS t
+            LEFT JOIN [dbo].[categories_trx] AS g
+            ON (t.merchant = g.merchant AND t.datetime = g.datetime)
+            WHERE t.transaction_type = 'Compra' AND t.datetime >= ?
+            """,
+            date_from,
+        )
+        transactions_from_db = cursor.fetchall()
+
+        # Close the connection
+        cursor.close()
+
+        # Get the transactions with the correct type
+        if len(transactions_from_db) > 0:
+            transactions = [
+                LabeledTransactionInfo(
+                    merchant=str(transaction[0]),
+                    datetime=transaction[1],
+                    category=str(transaction[2]),
+                    similarity=transaction[3],
+                )
+                for transaction in transactions_from_db
+            ]
+        else:
+            transactions = []
+
+        return transactions
+    except Exception:
+        return []
