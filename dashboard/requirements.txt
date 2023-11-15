@@ -1,0 +1,4 @@
+dash
+pandas==2.1.0
+python-dotenv == 0.21.1
+dash-auth==2.0.0
