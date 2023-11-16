@@ -1,18 +1,25 @@
-import dash
-import dash_bootstrap_components as dbc
-from dash import dcc, html, dash_table
-from dash.dependencies import Input, Output
 import datetime
-import pandas as pd
-from dashboard.expenses import MyExpenses
 import os
-import dash_auth
-import plotly.express as px
+from dotenv import load_dotenv
+from typing import Tuple
 
-# Load your data from the backend (assuming a CSV file)
-expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
-df_expenses = expenses.get_expenses(timeframe="from_origin")
-df_labeled_expenses = expenses.get_labeled_expenses(return_amount=True)
+import dash
+import dash_auth
+import dash_bootstrap_components as dbc
+import pandas as pd
+import plotly.express as px
+from dash import dash_table, dcc, html
+from dash.dependencies import Input, Output
+
+from dashboard.styles import Styles
+from dashboard.data import fetch_data
+from dashboard.components import time_series_plot, pie_chart_plot
+
+# Load environment variables
+load_dotenv()
+
+# Obtain the data
+expenses, df_expenses, df_labeled_expenses, updated_at = fetch_data()
 
 # Create Dash app with Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -36,16 +43,22 @@ app.layout = dbc.Container(
         html.H1(
             "My personal expenses 💸",
             className="display-4 mb-5",
-            style={
-                "font-size": "2.5em",
-                "color": "white",
-                "font-weight": "bold",
-                "text-align": "center",
-                "margin-bottom": "20px",
-                "background-color": "#007BFF",
-                "padding": "15px",
-                "border-radius": "10px",
-            },
+            style=Styles.H1,
+        ),
+        html.Div(
+            [
+                html.H4(
+                    updated_at,
+                    id="live-update-text",
+                    className="display-4 mb-5",
+                    style=Styles.H4,
+                ),
+                dcc.Interval(
+                    id="interval-component",
+                    interval=1 * 60 * 1000,
+                    n_intervals=0,
+                ),
+            ]
         ),
         # Filters
         dbc.Row(
@@ -104,37 +117,17 @@ app.layout = dbc.Container(
                             html.H3(
                                 "Total Expenses",
                                 className="mb-4",
-                                style={
-                                    "color": "white",
-                                    "background-color": "#007BFF",
-                                    "padding": "10px",
-                                    "border-radius": "5px",
-                                },
+                                style=Styles.H3,
                             ),
                             html.H1(
                                 "${:,.2f}".format(
                                     (-1) * df_expenses["amount"].sum()
                                 ),
                                 id="total-expenses",
-                                style={
-                                    "text-align": "center",
-                                    "font-size": "2.5em",
-                                    "color": "#007BFF",
-                                    "font-weight": "bold",
-                                    "margin-bottom": "20px",
-                                    "text-transform": "uppercase",
-                                },
+                                style=Styles.VALUE_CARD,
                             ),
                         ],
-                        style={
-                            "box-shadow": "2px 2px 2px 2px #D8D8D8",
-                            "padding": "20px",
-                            "height": "180px",
-                            "margin": "auto",
-                            "align": "center",
-                            "left": "50%",
-                            "transform": "translate(52%, 0%)",
-                        },
+                        style=Styles.DIV_LEFT_VALUE,
                     ),
                     width=4,
                 ),
@@ -144,35 +137,15 @@ app.layout = dbc.Container(
                             html.H3(
                                 "Total transactions",
                                 className="mb-4",
-                                style={
-                                    "color": "white",
-                                    "background-color": "#007BFF",
-                                    "padding": "10px",
-                                    "border-radius": "5px",
-                                },
+                                style=Styles.H3,
                             ),
                             html.H1(
                                 "{:,.0f}".format(df_expenses.shape[0]),
                                 id="total-transactions",
-                                style={
-                                    "text-align": "center",
-                                    "font-size": "2.5em",
-                                    "color": "#007BFF",
-                                    "font-weight": "bold",
-                                    "margin-bottom": "20px",
-                                    "text-transform": "uppercase",
-                                },
+                                style=Styles.VALUE_CARD,
                             ),
                         ],
-                        style={
-                            "box-shadow": "2px 2px 2px 2px #D8D8D8",
-                            "padding": "20px",
-                            "height": "180px",
-                            "margin": "auto",
-                            "align": "center",
-                            "left": "50%",
-                            "transform": "translate(56%, 0%)",
-                        },
+                        style=Styles.DIV_RIGHT_VALUE,
                     ),
                     width=4,
                 ),
@@ -195,12 +168,7 @@ app.layout = dbc.Container(
                             html.H3(
                                 "Expense details",
                                 className="mb-4",
-                                style={
-                                    "color": "white",
-                                    "background-color": "#007BFF",
-                                    "padding": "10px",
-                                    "border-radius": "5px",
-                                },
+                                style=Styles.H3,
                             ),
                             dash_table.DataTable(
                                 id="expense-table",
@@ -216,14 +184,7 @@ app.layout = dbc.Container(
                                         "amount",
                                     ]
                                 ].to_dict("records"),
-                                style_table={
-                                    "backgroundColor": "white",
-                                    "color": "#333",
-                                    "width": "100%",
-                                    "height": "100%",
-                                    "margin": "auto",
-                                    "maxHeight": "350px",
-                                },
+                                style_table=Styles.TABLE,
                                 style_cell_conditional=[
                                     {
                                         "if": {"column_id": c},
@@ -237,14 +198,7 @@ app.layout = dbc.Container(
                                 fixed_rows={"headers": True, "data": 0},
                             ),
                         ],
-                        style={
-                            "box-shadow": "2px 2px 2px 2px #D8D8D8",
-                            "padding": "20px",
-                            "height": "450px",
-                            "width": "100%",
-                            "border-radius": "5px",
-                            "overflow": "hidden",
-                        },
+                        style=Styles.DIV_CARD,
                     ),
                     width=6,
                 ),
@@ -254,22 +208,11 @@ app.layout = dbc.Container(
                             html.H3(
                                 "Expense distribution by category",
                                 className="mb-4",
-                                style={
-                                    "color": "white",
-                                    "background-color": "#007BFF",
-                                    "padding": "10px",
-                                    "border-radius": "5px",
-                                },
+                                style=Styles.H3,
                             ),
                             dcc.Graph(
                                 id="pie-plot",
-                                figure=px.pie(
-                                    df_labeled_expenses,
-                                    names="category",
-                                    values="amount",
-                                    width=500,
-                                    height=500,
-                                ),
+                                figure=pie_chart_plot(df_labeled_expenses),
                                 config={"displayModeBar": False},
                                 responsive=True,
                                 style={
@@ -279,14 +222,7 @@ app.layout = dbc.Container(
                                 },
                             ),
                         ],
-                        style={
-                            "box-shadow": "2px 2px 2px 2px #D8D8D8",
-                            "padding": "20px",
-                            "height": "450px",
-                            "width": "100%",
-                            "border-radius": "5px",
-                            "overflow": "hidden",
-                        },
+                        style=Styles.DIV_CARD,
                     ),
                     width=6,
                 ),
@@ -302,12 +238,7 @@ app.layout = dbc.Container(
                             html.H3(
                                 "Time series of my expenses",
                                 className="mb-4",
-                                style={
-                                    "color": "white",
-                                    "background-color": "#007BFF",
-                                    "padding": "10px",
-                                    "border-radius": "5px",
-                                },
+                                style=Styles.H3,
                             ),
                             html.Div(
                                 [
@@ -329,22 +260,13 @@ app.layout = dbc.Container(
                             ),
                             dcc.Graph(
                                 id="time-series-plot",
-                                figure=px.line(
-                                    expenses.get_moving_average(df_expenses),
-                                    x="datetime",
-                                    y="amount_moving_average",
+                                figure=time_series_plot(
+                                    expenses.get_moving_average(df_expenses)
                                 ),
                                 config={"displayModeBar": False},
                             ),
                         ],
-                        style={
-                            "box-shadow": "2px 2px 2px 2px #D8D8D8",
-                            "padding": "20px",
-                            "height": "650px",
-                            "width": "100%",
-                            "border-radius": "5px",
-                            "overflow": "hidden",
-                        },
+                        style=Styles.DIV_TIME_SERIES,
                     ),
                     width=12,
                 )
@@ -369,6 +291,7 @@ app.layout = dbc.Container(
         Input("transaction-type-dropdown", "value"),
         Input("text-filter", "value"),
     ],
+    prevent_initial_call=False,
 )
 def update_table(
     start_date: datetime.datetime,
@@ -414,30 +337,14 @@ def update_table(
     # Change the sign of the amount
     df_expenses_filtered["amount"] = -1 * df_expenses_filtered["amount"]
 
-    bar_plot = px.line(
+    bar_plot = time_series_plot(
         expenses.get_moving_average(
             df_expenses_filtered, window=30 if window is None else window
-        ),
-        x="datetime",
-        y="amount_moving_average",
+        )
     )
 
     # Update the pie plot
-    pie_plot = px.pie(
-        df_labeled_expenses_filtered,
-        names="category",
-        values="amount",
-        hole=0.4,
-        color_discrete_map={
-            "comida": "#FFC300",
-            "diversion": "#FF5733",
-            "carro": "#C70039",
-            "facturas": "#900C3F",
-            "mercado": "#581845",
-            "servicios": "#FFC300",
-            "movilidad": "#FF5733",
-        },
-    )
+    pie_plot = pie_chart_plot(df_labeled_expenses_filtered)
 
     # Update the total expenses
     total_expenses = "${:,.2f}".format(
@@ -451,4 +358,4 @@ def update_table(
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, host="0.0.0.0", port=8050)
+    app.run_server(debug=True, host="0.0.0.0", port=8000)

@@ -1,8 +1,12 @@
-import requests
-from typing import Literal
-import pandas as pd
-from dotenv import load_dotenv
 import os
+from typing import Literal
+
+import pandas as pd
+import requests
+from dotenv import load_dotenv
+
+# Set pandas options
+pd.options.mode.chained_assignment = None
 
 # Load environment variables
 load_dotenv()
@@ -137,4 +141,5 @@ class MyExpenses:
 
 if __name__ == "__main__":
     expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
-    print(expenses.get_labeled_expenses(return_amount=True))
+    df_labeled_expenses = expenses.get_labeled_expenses(return_amount=True)
+    print(df_labeled_expenses.head())
