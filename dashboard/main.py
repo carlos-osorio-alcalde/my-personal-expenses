@@ -12,31 +12,29 @@ import plotly.express as px
 # Load your data from the backend (assuming a CSV file)
 expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
 df_expenses = expenses.get_expenses(timeframe="from_origin")
+df_labeled_expenses = expenses.get_labeled_expenses(return_amount=True)
 
 # Create Dash app with Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app.title = "My personal expenses 💸"
 
 # Authentication
 auth = dash_auth.BasicAuth(
     app, {os.getenv("USER_APP"): os.getenv("PASSWORD_APP")}
 )
 
-# Define the background color
-bg_color = "#ffffff"
-text_color = "#333"
-
 # Layout of the dashboard
 app.layout = dbc.Container(
     fluid=True,
     style={
-        "backgroundColor": bg_color,
-        "color": text_color,
+        "backgroundColor": "#ffffff",
+        "color": "#333",
         "padding": "75px",
         "margin": "center",
     },
     children=[
         html.H1(
-            "Personal Expenses Dashboard",
+            "My personal expenses 💸",
             className="display-4 mb-5",
             style={
                 "font-size": "2.5em",
@@ -44,8 +42,9 @@ app.layout = dbc.Container(
                 "font-weight": "bold",
                 "text-align": "center",
                 "margin-bottom": "20px",
-                "text-transform": "uppercase",
                 "background-color": "#007BFF",
+                "padding": "15px",
+                "border-radius": "10px",
             },
         ),
         # Filters
@@ -57,14 +56,14 @@ app.layout = dbc.Container(
                             html.Label("Select range:  "),
                             dcc.DatePickerRange(
                                 id="date-range-picker",
-                                start_date=df_expenses["datetime"].max()
+                                start_date=datetime.datetime.now().date()
                                 - pd.DateOffset(
-                                    days=df_expenses["datetime"]
-                                    .max()
+                                    days=datetime.datetime.now()
+                                    .date()
                                     .weekday()
-                                    + 1
                                 ),
-                                end_date=df_expenses["datetime"].max(),
+                                end_date=datetime.datetime.now().date()
+                                + pd.DateOffset(days=1),
                                 display_format="YYYY-MM-DD",
                             ),
                         ],
@@ -130,7 +129,10 @@ app.layout = dbc.Container(
                         style={
                             "box-shadow": "2px 2px 2px 2px #D8D8D8",
                             "padding": "20px",
-                            "height": "200px",
+                            "height": "180px",
+                            "margin": "auto",
+                            "align": "center",
+                            "left": "50%",
                             "transform": "translate(52%, 0%)",
                         },
                     ),
@@ -165,7 +167,7 @@ app.layout = dbc.Container(
                         style={
                             "box-shadow": "2px 2px 2px 2px #D8D8D8",
                             "padding": "20px",
-                            "height": "200px",
+                            "height": "180px",
                             "margin": "auto",
                             "align": "center",
                             "left": "50%",
@@ -180,6 +182,7 @@ app.layout = dbc.Container(
                 "margin": "auto",
                 "align": "center",
                 "border-radius": "5px",
+                "overflow": "hidden",
             },
         ),
         html.Hr(),
@@ -190,7 +193,7 @@ app.layout = dbc.Container(
                     html.Div(
                         [
                             html.H3(
-                                "Expense Details",
+                                "Expense details",
                                 className="mb-4",
                                 style={
                                     "color": "white",
@@ -205,7 +208,14 @@ app.layout = dbc.Container(
                                     {"name": col, "id": col}
                                     for col in df_expenses.columns
                                 ],
-                                data=df_expenses.to_dict("records"),
+                                data=df_expenses[
+                                    [
+                                        "transaction_type",
+                                        "merchant",
+                                        "datetime",
+                                        "amount",
+                                    ]
+                                ].to_dict("records"),
                                 style_table={
                                     "backgroundColor": "white",
                                     "color": "#333",
@@ -230,7 +240,7 @@ app.layout = dbc.Container(
                         style={
                             "box-shadow": "2px 2px 2px 2px #D8D8D8",
                             "padding": "20px",
-                            "height": "500px",
+                            "height": "450px",
                             "width": "100%",
                             "border-radius": "5px",
                             "overflow": "hidden",
@@ -242,7 +252,7 @@ app.layout = dbc.Container(
                     html.Div(
                         [
                             html.H3(
-                                "Expense Distribution by Category",
+                                "Expense distribution by category",
                                 className="mb-4",
                                 style={
                                     "color": "white",
@@ -254,7 +264,11 @@ app.layout = dbc.Container(
                             dcc.Graph(
                                 id="pie-plot",
                                 figure=px.pie(
-                                    df_expenses, names="transaction_type"
+                                    df_labeled_expenses,
+                                    names="category",
+                                    values="amount",
+                                    width=500,
+                                    height=500,
                                 ),
                                 config={"displayModeBar": False},
                                 responsive=True,
@@ -268,7 +282,10 @@ app.layout = dbc.Container(
                         style={
                             "box-shadow": "2px 2px 2px 2px #D8D8D8",
                             "padding": "20px",
-                            "height": "500px",
+                            "height": "450px",
+                            "width": "100%",
+                            "border-radius": "5px",
+                            "overflow": "hidden",
                         },
                     ),
                     width=6,
@@ -283,7 +300,7 @@ app.layout = dbc.Container(
                     html.Div(
                         [
                             html.H3(
-                                "Monthly Expense Summary",
+                                "Time series of my expenses",
                                 className="mb-4",
                                 style={
                                     "color": "white",
@@ -323,6 +340,10 @@ app.layout = dbc.Container(
                         style={
                             "box-shadow": "2px 2px 2px 2px #D8D8D8",
                             "padding": "20px",
+                            "height": "650px",
+                            "width": "100%",
+                            "border-radius": "5px",
+                            "overflow": "hidden",
                         },
                     ),
                     width=12,
@@ -380,9 +401,18 @@ def update_table(
         & (df_expenses["datetime"] <= end_date)
         & (df_expenses["transaction_type"].isin(transaction_type))
     ]
+    df_labeled_expenses_filtered = df_labeled_expenses[
+        (df_labeled_expenses["datetime"] >= start_date)
+        & (df_labeled_expenses["datetime"] <= end_date)
+    ]
 
     # Update the table
-    table = df_expenses_filtered.to_dict("records")
+    table = df_expenses_filtered[
+        ["transaction_type", "merchant", "datetime", "amount"]
+    ].to_dict("records")
+
+    # Change the sign of the amount
+    df_expenses_filtered["amount"] = -1 * df_expenses_filtered["amount"]
 
     bar_plot = px.line(
         expenses.get_moving_average(
@@ -393,7 +423,21 @@ def update_table(
     )
 
     # Update the pie plot
-    pie_plot = px.pie(df_expenses_filtered, names="transaction_type")
+    pie_plot = px.pie(
+        df_labeled_expenses_filtered,
+        names="category",
+        values="amount",
+        hole=0.4,
+        color_discrete_map={
+            "comida": "#FFC300",
+            "diversion": "#FF5733",
+            "carro": "#C70039",
+            "facturas": "#900C3F",
+            "mercado": "#581845",
+            "servicios": "#FFC300",
+            "movilidad": "#FF5733",
+        },
+    )
 
     # Update the total expenses
     total_expenses = "${:,.2f}".format(
@@ -407,4 +451,4 @@ def update_table(
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=True, host="0.0.0.0", port=8050)

@@ -54,6 +54,9 @@ class MyExpenses:
         # Create a new column of the year-month
         df["year_month"] = df["datetime"].dt.strftime("%Y-%m")
 
+        # Change the sign of the amount
+        df["amount"] = -1 * df["amount"]
+
         return df[df["merchant"] != "unknown"]
 
     def get_moving_average(
@@ -72,20 +75,66 @@ class MyExpenses:
             df_expenses["transaction_type"] == "Compra"
         ].copy()
 
+        # Change the sign of the amount
+        df_expenses_moving_average["amount"] = (
+            -1 * df_expenses_moving_average["amount"]
+        )
+
+        # Remove outliers. All the purchases in the quantile 0.99 are removed
+        df_expenses_moving_average = df_expenses_moving_average[
+            df_expenses_moving_average["amount"]
+            <= df_expenses_moving_average["amount"].quantile(0.99)
+        ]
+
         # Sort the DataFrame by datetime
         df_expenses_moving_average.sort_values(by="datetime", inplace=True)
 
         # Get the moving average of the expenses
-        df_expenses_moving_average["amount_moving_average"] = (-1) * (
+        df_expenses_moving_average["amount_moving_average"] = (
             df_expenses_moving_average["amount"]
             .rolling(window=window, min_periods=1)
             .mean()
             .round(2)
         )
 
+        # Change the sign of the amount
+        df_expenses_moving_average["amount"] = (
+            -1 * df_expenses_moving_average["amount"]
+        )
+
         return df_expenses_moving_average
+
+    def get_labeled_expenses(
+        self, return_amount: bool = False
+    ) -> pd.DataFrame:
+        """
+        This method returns the labeled expenses
+
+        Parameters:
+        ----------
+        return_amount: bool
+            Whether to return the amount or not
+        """
+        url = "https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/expenses/get_transactions_with_labels/?timeframe=from_origin"  # noqa
+        headers = {"Authorization": f"Bearer {self.token}"}
+        response = requests.get(url, headers=headers)
+
+        # Get the response as a DataFrame
+        df = pd.DataFrame(response.json())
+        df["datetime"] = pd.to_datetime(df["datetime"])
+
+        # If return_amount is True, get the full expenses and merge with the labeled expenses
+        if return_amount:
+            df_expenses = self.get_expenses(timeframe="from_origin")
+            df = df.merge(
+                df_expenses[["merchant", "datetime", "amount"]],
+                on=["datetime", "merchant"],
+                how="left",
+            )
+
+        return df
 
 
 if __name__ == "__main__":
     expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
-    print(expenses.get_expenses(timeframe="from_origin"))
+    print(expenses.get_labeled_expenses(return_amount=True))
