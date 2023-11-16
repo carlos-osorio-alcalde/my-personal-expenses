@@ -22,7 +22,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ env.IMAGE_NAME }} --platform linux/amd64 -f Dockerfile .
+          docker build -t ${{ env.IMAGE_NAME }} --platform linux/amd64 -f dashboard/Dockerfile .
 
       - name: Log in to Azure
         run: |
