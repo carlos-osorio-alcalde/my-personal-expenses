@@ -1,8 +1,10 @@
-from dashboard.expenses import MyExpenses
-import os
-import pandas as pd
-from typing import Tuple
 import datetime
+import os
+from typing import Tuple
+
+import pandas as pd
+
+from dashboard.expenses import MyExpenses
 
 
 def fetch_data() -> Tuple[MyExpenses, pd.DataFrame, pd.DataFrame, str]:

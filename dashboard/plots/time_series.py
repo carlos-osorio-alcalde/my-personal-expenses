@@ -1,8 +1,10 @@
-import plotly.express as px
-from dashboard.styles import Styles
-import pandas as pd
 import os
+
+import pandas as pd
+import plotly.express as px
+
 from dashboard.expenses import MyExpenses
+from dashboard.styles import Styles
 
 
 def time_series_plot(df: pd.DataFrame) -> px.line:

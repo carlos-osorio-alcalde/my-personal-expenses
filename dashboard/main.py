@@ -1,7 +1,5 @@
 import datetime
 import os
-from dotenv import load_dotenv
-from typing import Tuple
 
 import dash
 import dash_auth
@@ -10,10 +8,12 @@ import pandas as pd
 import plotly.express as px
 from dash import dash_table, dcc, html
 from dash.dependencies import Input, Output
+from dotenv import load_dotenv
 
-from dashboard.styles import Styles
+from dashboard.callbacks import update_metrics
 from dashboard.data import fetch_data
-from dashboard.components import time_series_plot, pie_chart_plot
+from dashboard.plots import pie_chart_plot, time_series_plot
+from dashboard.styles import Styles
 
 # Load environment variables
 load_dotenv()
@@ -33,12 +33,7 @@ auth = dash_auth.BasicAuth(
 # Layout of the dashboard
 app.layout = dbc.Container(
     fluid=True,
-    style={
-        "backgroundColor": "#ffffff",
-        "color": "#333",
-        "padding": "75px",
-        "margin": "center",
-    },
+    style=Styles.CONTAINER,
     children=[
         html.H1(
             "My personal expenses 💸",
@@ -55,7 +50,7 @@ app.layout = dbc.Container(
                 ),
                 dcc.Interval(
                     id="interval-component",
-                    interval=1 * 60 * 1000,
+                    interval=30 * 60 * 1000,
                     n_intervals=0,
                 ),
             ]
@@ -80,7 +75,12 @@ app.layout = dbc.Container(
                                 display_format="YYYY-MM-DD",
                             ),
                         ],
-                        style={"margin-bottom": "20px", "width": "80%"},
+                        style={
+                            "margin-bottom": "20px",
+                            "width": "80%",
+                            "align": "center",
+                            "margin-top": "30px",
+                        },
                     ),
                     width=6,
                 ),
@@ -174,28 +174,33 @@ app.layout = dbc.Container(
                                 id="expense-table",
                                 columns=[
                                     {"name": col, "id": col}
-                                    for col in df_expenses.columns
-                                ],
-                                data=df_expenses[
-                                    [
-                                        "transaction_type",
+                                    for col in [
                                         "merchant",
                                         "datetime",
+                                        "category",
+                                        "amount",
+                                    ]
+                                ],
+                                data=df_labeled_expenses[
+                                    [
+                                        "merchant",
+                                        "datetime",
+                                        "category",
                                         "amount",
                                     ]
                                 ].to_dict("records"),
                                 style_table=Styles.TABLE,
-                                style_cell_conditional=[
-                                    {
-                                        "if": {"column_id": c},
-                                        "textAlign": "left",
-                                    }
-                                    for c in df_expenses.columns
-                                ],
-                                editable=True,
+                                editable=False,
                                 filter_action="native",
                                 sort_action="native",
                                 fixed_rows={"headers": True, "data": 0},
+                                style_cell={
+                                    "minWidth": "100px",
+                                    "width": "100px",
+                                    "maxWidth": "100px",
+                                    "overflow": "hidden",
+                                    "textOverflow": "ellipsis",
+                                },
                             ),
                         ],
                         style=Styles.DIV_CARD,
@@ -293,12 +298,12 @@ app.layout = dbc.Container(
     ],
     prevent_initial_call=False,
 )
-def update_table(
+def filter_table(
     start_date: datetime.datetime,
     end_date: datetime.datetime,
     transaction_type: list,
     window: int,
-) -> (pd.DataFrame, px.bar, px.pie):
+) -> (pd.DataFrame, px.bar, px.pie, str, str):
     """
     This function updates the table and the bar plot
 
@@ -318,43 +323,91 @@ def update_table(
     tuple(pd.DataFrame, px.bar, px.pie)
         The table, bar plot, and pie plot
     """
-    # Filter the data
-    df_expenses_filtered = df_expenses[
-        (df_expenses["datetime"] >= start_date)
-        & (df_expenses["datetime"] <= end_date)
-        & (df_expenses["transaction_type"].isin(transaction_type))
-    ]
-    df_labeled_expenses_filtered = df_labeled_expenses[
-        (df_labeled_expenses["datetime"] >= start_date)
-        & (df_labeled_expenses["datetime"] <= end_date)
-    ]
-
-    # Update the table
-    table = df_expenses_filtered[
-        ["transaction_type", "merchant", "datetime", "amount"]
-    ].to_dict("records")
-
-    # Change the sign of the amount
-    df_expenses_filtered["amount"] = -1 * df_expenses_filtered["amount"]
-
-    bar_plot = time_series_plot(
-        expenses.get_moving_average(
-            df_expenses_filtered, window=30 if window is None else window
-        )
+    return update_metrics(
+        expenses,
+        df_expenses,
+        df_labeled_expenses,
+        start_date,
+        end_date,
+        transaction_type,
+        window,
     )
 
-    # Update the pie plot
-    pie_plot = pie_chart_plot(df_labeled_expenses_filtered)
 
-    # Update the total expenses
-    total_expenses = "${:,.2f}".format(
-        (-1) * df_expenses_filtered["amount"].sum()
+# Callback for updating the last updated time
+@app.callback(
+    [
+        Output("live-update-text", "children", allow_duplicate=True),
+        Output("expense-table", "data", allow_duplicate=True),
+        Output("time-series-plot", "figure", allow_duplicate=True),
+        Output("pie-plot", "figure", allow_duplicate=True),
+        Output("total-transactions", "children", allow_duplicate=True),
+        Output("total-expenses", "children", allow_duplicate=True),
+    ],
+    [
+        Input("interval-component", "n_intervals"),
+        Input("date-range-picker", "start_date"),
+        Input("date-range-picker", "end_date"),
+        Input("transaction-type-dropdown", "value"),
+        Input("text-filter", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def update_metrics_from_api(
+    n: int,
+    start_date: datetime.datetime,
+    end_date: datetime.datetime,
+    transaction_type: list,
+    window: int,
+) -> str:
+    """
+    This function updates the last updated time
+
+    Parameters
+    ----------
+    n : int
+        The number of intervals
+    start_date : datetime.datetime
+        The start date of the range
+    end_date : datetime.datetime
+        The end date of the range
+    transaction_type : list
+        The transaction type
+    window : int
+        The window size for the moving average
+
+    Returns
+    -------
+    str
+        The last updated time
+    """
+    # Fetch the data
+    expenses, df_expenses, df_labeled_expenses, updated_at = fetch_data()
+
+    (
+        table,
+        bar_plot,
+        pie_plot,
+        total_transactions,
+        total_expenses,
+    ) = update_metrics(
+        expenses,
+        df_expenses,
+        df_labeled_expenses,
+        start_date,
+        end_date,
+        transaction_type,
+        window,
     )
 
-    # Update the total transactions
-    total_transactions = "{:,.0f}".format(df_expenses_filtered.shape[0])
-
-    return table, bar_plot, pie_plot, total_transactions, total_expenses
+    return (
+        updated_at,
+        table,
+        bar_plot,
+        pie_plot,
+        total_transactions,
+        total_expenses,
+    )
 
 
 if __name__ == "__main__":

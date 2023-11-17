@@ -91,3 +91,16 @@ class Styles:
         "left": "50%",
         "transform": "translate(56%, 0%)",
     }
+
+    # Set the style of the container
+    CONTAINER = {
+        "backgroundColor": "#ffffff",
+        "color": "#333",
+        "padding": "75px",
+        "margin": "center",
+        "left-margin": "20%",
+        "right-margin": "20%",
+        "max-width": "100%",
+        "max-height": "100%",
+        "border-radius": "5px",
+    }
