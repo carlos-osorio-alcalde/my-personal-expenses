@@ -1,6 +1,9 @@
 # Get the base Python Image from Docker Hub
 FROM python:3.10.6
 
+# Set the timezone
+ENV TZ="America/Bogota"
+
 # Set the working directory to /app
 WORKDIR /
 
