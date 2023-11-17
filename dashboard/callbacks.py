@@ -71,4 +71,10 @@ def update_metrics(
     # Update the total transactions
     total_transactions = "{:,.0f}".format(df_expenses_filtered.shape[0])
 
-    return table, bar_plot, pie_plot, total_transactions, total_expenses
+    return (
+        table,
+        bar_plot,
+        pie_plot,
+        total_transactions,
+        total_expenses,
+    )

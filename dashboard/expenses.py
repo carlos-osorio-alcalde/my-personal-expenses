@@ -135,6 +135,8 @@ class MyExpenses:
                 on=["datetime", "merchant"],
                 how="left",
             )
+            # Delete duplicates
+            df.drop_duplicates(inplace=True)
 
         return df
 
