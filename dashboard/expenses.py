@@ -29,7 +29,7 @@ class MyExpenses:
     )
 
     # Time to wait before updating the expenses
-    TIME_TO_WAIT = 10 * 60
+    TIME_TO_WAIT = 1 * 60
 
     def __init__(self, token: str, check_av: bool = False):
         self._token = token
@@ -129,15 +129,24 @@ class MyExpenses:
 
         # If return_amount is True, get the full expenses and merge with the labeled expenses
         if return_amount:
-            df_labeled_expenses = df_labeled_expenses.merge(
-                df_expenses[["merchant", "datetime", "amount"]],
+            df_labeled_expenses = df_expenses.merge(
+                df_labeled_expenses[["merchant", "datetime", "category"]],
                 on=["datetime", "merchant"],
                 how="left",
             )
             # Delete duplicates
             df_labeled_expenses.drop_duplicates(inplace=True)
 
-        return df_labeled_expenses
+        # If the category is null, add the value of transaction_type
+        df_labeled_expenses["category"] = df_labeled_expenses.apply(
+            lambda x: x["transaction_type"]
+            if pd.isnull(x["category"])
+            else x["category"],
+            axis=1,
+        )
+        return df_labeled_expenses[
+            df_labeled_expenses["category"] != "Recepcion Transferencia"
+        ]
 
     def _get_labeled_expenses_from_cache(self) -> pd.DataFrame:
         """
@@ -192,6 +201,7 @@ class MyExpenses:
             "daily", "weekly", "partial_weekly", "monthly", "from_origin"
         ] = "from_origin",
         return_amount: bool = True,
+        return_from_cache: bool = False,
     ) -> (pd.DataFrame, pd.DataFrame):
         """
         This method returns all expenses from the API
@@ -207,7 +217,7 @@ class MyExpenses:
             > MyExpenses.TIME_TO_WAIT
             or not os.path.exists(MyExpenses.FILE_EXPENSES)
             or not os.path.exists(MyExpenses.FILE_LABELED_EXPENSES)
-        ):
+        ) and not return_from_cache:
             # Get the expenses from the API
             df_expenses = self._get_expenses_from_api(timeframe)
             df_expenses = self._modify_expenses_table(df_expenses)
@@ -248,14 +258,7 @@ class MyExpenses:
             The DataFrame of expenses
         """
         # Get the expenses that are purchases
-        df_expenses_moving_average = df_expenses[
-            df_expenses["transaction_type"] == "Compra"
-        ].copy()
-
-        # Change the sign of the amount
-        df_expenses_moving_average["amount"] = (
-            -1 * df_expenses_moving_average["amount"]
-        )
+        df_expenses_moving_average = df_expenses.copy()
 
         # Remove outliers. All the purchases in the quantile 0.99 are removed
         df_expenses_moving_average = df_expenses_moving_average[
@@ -272,11 +275,6 @@ class MyExpenses:
             .rolling(window=window, min_periods=1)
             .mean()
             .round(2)
-        )
-
-        # Change the sign of the amount
-        df_expenses_moving_average["amount"] = (
-            -1 * df_expenses_moving_average["amount"]
         )
 
         return df_expenses_moving_average

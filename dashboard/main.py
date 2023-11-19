@@ -72,7 +72,9 @@ def filter_table(
     """
     # Obtain the data
     expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
-    df_expenses, df_labeled_expenses, _ = fetch_data(expenses)
+    df_expenses, df_labeled_expenses, _ = fetch_data(
+        expenses, return_from_cache=True
+    )
 
     return update_metrics(
         expenses,

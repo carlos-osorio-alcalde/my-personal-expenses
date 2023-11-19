@@ -21,7 +21,6 @@ def time_series_plot(df: pd.DataFrame) -> px.line:
     px.line
         The time series plot
     """
-    # Create the time series plot
     fig_time_series = px.line(
         df,
         x="datetime",
@@ -46,15 +45,3 @@ def time_series_plot(df: pd.DataFrame) -> px.line:
 
     # Show the plot
     return fig_time_series
-
-
-if __name__ == "__main__":
-    # Load your data from the backend (assuming a CSV file)
-    expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
-    df_expenses = expenses.get_expenses(timeframe="from_origin")
-    moving_average = expenses.get_moving_average(
-        df_expenses=df_expenses, window=30
-    )
-
-    # Create the time series plot
-    time_series_plot(moving_average)

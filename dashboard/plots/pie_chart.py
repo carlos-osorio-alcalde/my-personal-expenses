@@ -25,7 +25,7 @@ def pie_chart_plot(df: pd.DataFrame) -> px.line:
         df,
         values="amount",
         names="category",
-        title="Expenses by category",
+        title="Expenses by category or transaction type",
         template="plotly_white",
         color_discrete_sequence=px.colors.sequential.Tealgrn,
     )

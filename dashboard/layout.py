@@ -22,7 +22,7 @@ def app_layout() -> dbc.Container:
     """
     # Obtain the data
     expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
-    df_expenses, df_labeled_expenses, updated_at = fetch_data(expenses)
+    _, df_labeled_expenses, updated_at = fetch_data(expenses)
 
     return dbc.Spinner(
         dbc.Container(
@@ -69,7 +69,6 @@ def app_layout() -> dbc.Container:
                                         + pd.DateOffset(days=1),
                                         display_format="YYYY-MM-DD",
                                         number_of_months_shown=2,
-                                        updatemode="bothdates",
                                     ),
                                 ],
                                 style={
@@ -84,18 +83,20 @@ def app_layout() -> dbc.Container:
                         dbc.Col(
                             html.Div(
                                 [
-                                    html.Label("Select Transaction Type:"),
+                                    html.Label(
+                                        "Select transaction type or category:"
+                                    ),
                                     dcc.Dropdown(
                                         id="transaction-type-dropdown",
                                         options=[
                                             {"label": t, "value": t}
-                                            for t in df_expenses[
-                                                "transaction_type"
+                                            for t in df_labeled_expenses[
+                                                "category"
                                             ].unique()
                                         ],
                                         multi=True,
-                                        value=df_expenses[
-                                            "transaction_type"
+                                        value=df_labeled_expenses[
+                                            "category"
                                         ].unique(),
                                     ),
                                 ],
@@ -122,7 +123,9 @@ def app_layout() -> dbc.Container:
                                     html.H1(
                                         "${:,.2f}".format(
                                             (-1)
-                                            * df_expenses["amount"].sum()
+                                            * df_labeled_expenses[
+                                                "amount"
+                                            ].sum()
                                         ),
                                         id="total-expenses",
                                         style=Styles.VALUE_CARD,
@@ -142,7 +145,7 @@ def app_layout() -> dbc.Container:
                                     ),
                                     html.H1(
                                         "{:,.0f}".format(
-                                            df_expenses.shape[0]
+                                            df_labeled_expenses.shape[0]
                                         ),
                                         id="total-transactions",
                                         style=Styles.VALUE_CARD,
@@ -275,7 +278,7 @@ def app_layout() -> dbc.Container:
                                         id="time-series-plot",
                                         figure=time_series_plot(
                                             expenses.get_moving_average(
-                                                df_expenses
+                                                df_labeled_expenses
                                             )
                                         ),
                                         config={"displayModeBar": False},

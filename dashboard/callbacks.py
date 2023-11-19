@@ -36,24 +36,18 @@ def update_metrics(
         The table, bar plot, and pie plot
     """
     # Filter the data
-    df_expenses_filtered = df_expenses[
-        (df_expenses["datetime"] >= start_date)
-        & (df_expenses["datetime"] <= end_date)
-        & (df_expenses["transaction_type"].isin(transaction_type))
-    ]
-    df_labeled_expenses_filtered = df_labeled_expenses[
+    df_expenses_filtered = df_labeled_expenses[
         (df_labeled_expenses["datetime"] >= start_date)
         & (df_labeled_expenses["datetime"] <= end_date)
+        & (df_labeled_expenses["category"].isin(transaction_type))
     ]
 
     # Update the table
-    table = df_labeled_expenses_filtered[
+    table = df_expenses_filtered[
         ["merchant", "datetime", "category", "amount"]
     ].to_dict("records")
 
-    # Change the sign of the amount
-    df_expenses_filtered["amount"] = -1 * df_expenses_filtered["amount"]
-
+    # Update the time series plot
     bar_plot = time_series_plot(
         expenses.get_moving_average(
             df_expenses_filtered, window=30 if window is None else window
@@ -61,12 +55,10 @@ def update_metrics(
     )
 
     # Update the pie plot
-    pie_plot = pie_chart_plot(df_labeled_expenses_filtered)
+    pie_plot = pie_chart_plot(df_expenses_filtered)
 
     # Update the total expenses
-    total_expenses = "${:,.2f}".format(
-        (-1) * df_expenses_filtered["amount"].sum()
-    )
+    total_expenses = "${:,.2f}".format(df_expenses_filtered["amount"].sum())
 
     # Update the total transactions
     total_transactions = "{:,.0f}".format(df_expenses_filtered.shape[0])
