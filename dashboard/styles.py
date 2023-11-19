@@ -52,7 +52,7 @@ class Styles:
 
     # Set the style of the Div that contains the table
     DIV_CARD = {
-        "box-shadow": "2px 2px 2px 2px #D8D8D8",
+        "box-shadow": "4px 4px 4px 4px #D8D8D8",
         "padding": "20px",
         "height": "450px",
         "width": "100%",
@@ -62,7 +62,7 @@ class Styles:
 
     # Set the style of the Div that contains the time series
     DIV_TIME_SERIES = {
-        "box-shadow": "2px 2px 2px 2px #D8D8D8",
+        "box-shadow": "4px 4px 4px 4px #D8D8D8",
         "padding": "20px",
         "height": "650px",
         "width": "100%",
@@ -72,7 +72,7 @@ class Styles:
 
     # Set the style of the Div that contains the left value on top
     DIV_LEFT_VALUE = {
-        "box-shadow": "2px 2px 2px 2px #D8D8D8",
+        "box-shadow": "4px 4px 4px 4px #D8D8D8",
         "padding": "20px",
         "height": "180px",
         "margin": "auto",
@@ -83,7 +83,7 @@ class Styles:
 
     # Set the style of the Div that contains the right value on top
     DIV_RIGHT_VALUE = {
-        "box-shadow": "2px 2px 2px 2px #D8D8D8",
+        "box-shadow": "4px 4px 4px 4px #D8D8D8",
         "padding": "20px",
         "height": "180px",
         "margin": "auto",

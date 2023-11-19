@@ -7,21 +7,15 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 from dash.dependencies import Input, Output
-from dash.exceptions import PreventUpdate
 from dotenv import load_dotenv
 
 from dashboard.callbacks import update_metrics
 from dashboard.data import fetch_data
-from dashboard.layout import app_layout
-
 from dashboard.expenses import MyExpenses
+from dashboard.layout import app_layout
 
 # Load environment variables
 load_dotenv()
-
-# Obtain the data
-expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
-df_expenses, df_labeled_expenses, updated_at = fetch_data(expenses)
 
 # Create Dash app with Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -32,13 +26,10 @@ auth = dash_auth.BasicAuth(
     app, {os.getenv("USER_APP"): os.getenv("PASSWORD_APP")}
 )
 
+app.layout = app_layout
 
-# Layout of the dashboard
-app.layout = app_layout(
-    expenses, df_expenses, df_labeled_expenses, updated_at
-)
-
-# Callback for updating the table and the bar plot
+# Callback for updating the table and the bar plot when the filter
+# is changed
 @app.callback(
     [
         Output("expense-table", "data"),
@@ -79,6 +70,10 @@ def filter_table(
     tuple(pd.DataFrame, px.bar, px.pie)
         The table, bar plot, and pie plot
     """
+    # Obtain the data
+    expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
+    df_expenses, df_labeled_expenses, _ = fetch_data(expenses)
+
     return update_metrics(
         expenses,
         df_expenses,
@@ -90,89 +85,28 @@ def filter_table(
     )
 
 
-# Callback for updating the last updated time
+# Callback to open the popup every 15 minutes
 @app.callback(
-    [
-        Output("live-update-text", "children", allow_duplicate=True),
-        Output("expense-table", "data", allow_duplicate=True),
-        Output("time-series-plot", "figure", allow_duplicate=True),
-        Output("pie-plot", "figure", allow_duplicate=True),
-        Output("total-transactions", "children", allow_duplicate=True),
-        Output("total-expenses", "children", allow_duplicate=True),
-    ],
+    Output("live-update-text", "children"),
     [
         Input("interval-component", "n_intervals"),
-        Input("date-range-picker", "start_date"),
-        Input("date-range-picker", "end_date"),
-        Input("transaction-type-dropdown", "value"),
-        Input("text-filter", "value"),
+        Input("live-update-text", "children"),
     ],
     prevent_initial_call=True,
 )
-def update_metrics_from_api(
-    n: int,
-    start_date: datetime.datetime,
-    end_date: datetime.datetime,
-    transaction_type: list,
-    window: int,
-) -> (pd.DataFrame, px.bar, px.pie, str, str):
+def change_last_updated_text(n_intervals: int, last_update: str):
     """
-    This function updates the last updated time
-
-    Parameters
-    ----------
-    n : int
-        The number of intervals
-    start_date : datetime.datetime
-        The start date of the range
-    end_date : datetime.datetime
-        The end date of the range
-    transaction_type : list
-        The transaction type
-    window : int
-        The window size for the moving average
-
-    Returns
-    -------
-    (pd.DataFrame, px.bar, px.pie, str, str)
-        The table, bar plot, and pie plot
+    This function changes the text of the last update if the time has passed
     """
-    triggered_component = dash.callback_context.triggered_id
-    if triggered_component is None:
-        raise PreventUpdate
-
-    # Check if the interval component is triggered
-    if "interval-component" in triggered_component:
-        # Fetch the data
-        df_expenses, df_labeled_expenses, updated_at = fetch_data(expenses)
-        last_refresh = updated_at
-
-        (
-            table,
-            bar_plot,
-            pie_plot,
-            total_transactions,
-            total_expenses,
-        ) = update_metrics(
-            expenses,
-            df_expenses,
-            df_labeled_expenses,
-            start_date,
-            end_date,
-            transaction_type,
-            window,
+    expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
+    if (
+        pd.Timestamp.now() - expenses.last_time_update()
+    ).total_seconds() > MyExpenses.TIME_TO_WAIT:
+        return "(Last updated at: {})".format(
+            expenses.last_time_update().strftime("%Y-%m-%d %H:%M:%S")
         )
 
-        return (
-            last_refresh,
-            table,
-            bar_plot,
-            pie_plot,
-            total_transactions,
-            total_expenses,
-        )
-    else:
-        raise PreventUpdate
+    return last_update
 
 
 if __name__ == "__main__":

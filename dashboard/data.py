@@ -24,10 +24,16 @@ def fetch_data(
         The expenses, labeled expenses, and the last updated date
     """
     # Load the data of the expenses
-    df_expenses = expenses.get_expenses(timeframe="from_origin")
-    df_labeled_expenses = expenses.get_labeled_expenses(return_amount=True)
+    df_expenses, df_labeled_expenses = expenses.get_expenses_tables(
+        return_amount=True
+    )
     updated_at = "(Last updated at: {})".format(
-        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        expenses.last_time_update().strftime("%Y-%m-%d %H:%M:%S")
     )
 
     return df_expenses, df_labeled_expenses, updated_at
+
+
+if __name__ == "__main__":
+    expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
+    df_expenses, df_labeled_expenses, updated_at = fetch_data(expenses)
