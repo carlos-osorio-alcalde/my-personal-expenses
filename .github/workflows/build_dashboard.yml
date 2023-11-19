@@ -1,0 +1,66 @@
+name: Build and Push API for base expenses
+
+on:
+  push:
+    branches:
+      - dashboard
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      CONTAINER_REGISTRY: expensesapp
+      IMAGE_NAME: dashboard-app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }} --platform linux/amd64 -f dashboard/Dockerfile .
+
+      - name: Log in to Azure
+        run: |
+          az login 
+          az account set --subscription azure_sponsorhip
+
+      - name: Tag Docker image
+        run: |
+          docker tag ${{ env.IMAGE_NAME }} ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+
+      - name: Log in to ACR
+        run: |
+          az acr login --name ${{ env.CONTAINER_REGISTRY }}
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@master
+        env:
+            IMAGE_NAME: ${{ env.IMAGE_NAME }}
+            CONTAINER_REGISTRY: ${{ env.CONTAINER_REGISTRY }}
+        with:
+            envs: IMAGE_NAME, CONTAINER_REGISTRY
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USER }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            script: |
+              # Get the IDs of all running containers
+              container_ids=$(docker ps -q)
+  
+              # Check if there are any running containers
+              if [[ -n "$container_ids" ]]; then
+                # Kill the running containers
+                docker kill $container_ids
+              fi
+  
+              docker login ${{ env.CONTAINER_REGISTRY }}.azurecr.io
+              docker pull $CONTAINER_REGISTRY.azurecr.io/$IMAGE_NAME:latest
+              docker run -d --restart unless-stopped --env-file .env -p 8050:8050 $CONTAINER_REGISTRY.azurecr.io/$IMAGE_NAME:latest
