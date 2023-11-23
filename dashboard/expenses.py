@@ -27,6 +27,7 @@ class MyExpenses:
     FILE_LAST_UPDATE = os.path.join(
         FOLDER_CACHED_EXPENSES, "last_update.txt"
     )
+    URL_API = "http://ec2-23-20-155-185.compute-1.amazonaws.com:5000"
 
     # Time to wait before updating the expenses
     TIME_TO_WAIT = 1 * 60
@@ -41,7 +42,7 @@ class MyExpenses:
         """
         This method connects to the API and returns the token
         """
-        url = "https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/database/test_connection"  # noqa
+        url = MyExpenses.URL_API + "/database/test_connection"
         headers = {"Authorization": f"Bearer {self._token}"}
         response = requests.get(url, headers=headers)
 
@@ -94,7 +95,7 @@ class MyExpenses:
         timeframe: Literal["daily", "weekly", "partial_weekly", "monthly", "from_origin"]
             The timeframe to get the expenses from
         """
-        url = f"https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/expenses/get_full_transactions/?timeframe={timeframe}"  # noqa
+        url = MyExpenses.URL_API + f"/expenses/get_full_transactions/?timeframe={timeframe}"
         headers = {"Authorization": f"Bearer {self._token}"}
         response = requests.get(url, headers=headers)
 
@@ -170,7 +171,7 @@ class MyExpenses:
             The labeled expenses from the API
 
         """
-        url = "https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/expenses/get_transactions_with_labels/?timeframe=from_origin"  # noqa
+        url = MyExpenses.URL_API + "/expenses/get_transactions_with_labels/?timeframe=from_origin"  # noqa
         headers = {"Authorization": f"Bearer {self._token}"}
         response = requests.get(url, headers=headers)
 
