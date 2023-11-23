@@ -3,7 +3,7 @@ name: Build and Push API for both APIs
 on:
   push:
     branches:
-      - main
+      - deploy-expenses-monitoring
 
 jobs:
   build-and-push:

@@ -3,7 +3,7 @@ name: Build and Push API for base expenses
 on:
   push:
     branches:
-      - dashboard
+      - deploy-dashboard
 
 jobs:
   build-and-push:
