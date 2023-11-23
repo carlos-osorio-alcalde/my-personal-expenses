@@ -3,7 +3,7 @@ name: Build and Push API for base expenses
 on:
   push:
     branches:
-      - add-api-from-aws
+      - main
 
 jobs:
   build-and-push:

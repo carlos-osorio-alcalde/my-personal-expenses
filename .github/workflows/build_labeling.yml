@@ -3,7 +3,7 @@ name: Build and Push API for labeling
 on:
   push:
     branches:
-      - deploy-labeling
+      - deploy-labels
 
 jobs:
   build-and-push:

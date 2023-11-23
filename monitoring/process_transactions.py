@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 # Load environment variables
 load_dotenv()
 
+# URL of the API
+URL_API = "http://ec2-23-20-155-185.compute-1.amazonaws.com:5000"
 
 def get_transactions(
     return_as_pandas: bool = False,
@@ -33,7 +35,7 @@ def get_transactions(
         The dataframe with all the transactions of the current day.
     """
     # Get the transactions of the current day
-    url = f"https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/expenses/get_full_transactions/?timeframe=daily"  # noqa
+    url = URL_API + "/expenses/get_full_transactions/?timeframe=daily"
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {os.getenv('API_EXPENSES_TOKEN')}",
@@ -123,7 +125,7 @@ def check_anomaly(expenses_values: dict) -> Literal["normal", "anomaly"]:
         "Authorization": f"Bearer {os.getenv('API_EXPENSES_TOKEN')}",
     }
     response = requests.get(
-        "https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/monitoring/predict_anomaly/",  # noqa
+        URL_API + "/monitoring/predict_anomaly/",  # noqa
         headers=headers,
         params=params,
     )
@@ -147,7 +149,7 @@ def get_average_normal_values() -> float:
         "Authorization": f"Bearer {os.getenv('API_EXPENSES_TOKEN')}",
     }
     response = requests.get(
-        "https://personal-expenses-api.orangecliff-ed60441b.eastus.azurecontainerapps.io/expenses/a_day_like_today/",  # noqa
+        URL_API + "/expenses/a_day_like_today/",  # noqa
         headers=headers,
     )
     return (-1) * response.json()["median_amount_of_purchases"]

@@ -3,7 +3,7 @@ name: Build and Push API for monitoring
 on:
   push:
     branches:
-      - deploy-monitoring
+      - main
 
 jobs:
   build-and-push:
