@@ -185,3 +185,44 @@ async def add_transaction(transaction: AddTransactionInfo) -> str:
         return "Operation completed successfully."
     except Exception:
         raise HTTPException(status_code=500, detail="Connection failed.")
+
+
+@router.get(
+    "/check_if_there_are_trxs_without_labels",
+    dependencies=[Depends(check_access_token)],
+)
+def are_there_transactions_without_label() -> bool:
+    """
+    This function checks if there are transactions without labels.
+
+    Returns
+    -------
+    bool
+        A message indicating the status of the connection.
+        If true, there are transactions without labels.
+    """
+    try:
+        # Establish the connection
+        cursor = get_cursor()
+
+        # Obtain the rows
+        cursor.execute(
+            """
+            SELECT TOP 10 
+                    t.merchant,
+                    t.datetime,
+                    g.category
+            FROM [dbo].[transactions] AS t
+            LEFT JOIN [dbo].[categories_trx] AS g
+            ON (CAST(t.datetime AS DATETIME) = CAST(g.datetime AS DATETIME) 
+                AND CAST(t.merchant AS VARCHAR) = CAST(g.merchant AS VARCHAR))
+            WHERE transaction_type = 'Compra' AND g.category IS NULL
+            ORDER BY t.datetime DESC;
+            """
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+
+        return len(rows) > 0
+    except Exception:
+        raise HTTPException(status_code=500, detail="Connection failed.")
