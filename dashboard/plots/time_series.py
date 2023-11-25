@@ -25,7 +25,7 @@ def time_series_plot(df: pd.DataFrame) -> px.line:
         df,
         x="datetime",
         y="amount_moving_average",
-        title="Expenses moving average",
+        title="",
         template="plotly_white",
     )
 

@@ -21,11 +21,10 @@ def app_layout() -> dbc.Container:
         The layout of the dashboard
     """
     # Obtain the data
-    expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
+    expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API")) 
     _, df_labeled_expenses, updated_at = fetch_data(expenses)
 
-    return dbc.Spinner(
-        dbc.Container(
+    return dbc.Container(
             fluid=True,
             style=Styles.CONTAINER,
             children=[
@@ -121,7 +120,7 @@ def app_layout() -> dbc.Container:
                                         style=Styles.H3,
                                     ),
                                     html.H1(
-                                        "${:,.2f}".format(
+                                        "${:,.0f}".format(
                                             (-1)
                                             * df_labeled_expenses[
                                                 "amount"
@@ -166,6 +165,7 @@ def app_layout() -> dbc.Container:
                 ),
                 html.Hr(),
                 # Table and Bar Plot (Two Columns)
+                html.Hr(),
                 dbc.Row(
                     [
                         dbc.Col(
@@ -292,15 +292,4 @@ def app_layout() -> dbc.Container:
                     className="mb-4",
                 ),
             ],
-        ),
-        color=Styles._THEME_COLOR,
-        fullscreen=True,
-        size="md",
-        spinner_style={"width": "5rem", "height": "5rem"},
-        fullscreen_style={
-            "display": "flex",
-            "align-items": "center",
-            "justify-content": "center",
-            "height": "100vh",
-        },
-    )
+        )
