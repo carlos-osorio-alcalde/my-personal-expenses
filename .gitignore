@@ -57,3 +57,10 @@ labels/expenses_labeled_full.csv
 labels/get_initial_embeddings.ipynb
 labels/labeling_all_trxs.ipynb
 dashboard-env/
+
+# Ignore the .env file in dashboard
+dashboard/.dashboard.keys.env
+
+# Ignore the cached_expenses folder
+dashboard/cached_expenses/**.csv
+dashboard/cached_expenses/**.txt
