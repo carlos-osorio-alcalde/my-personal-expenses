@@ -70,14 +70,18 @@ class Styles:
         "overflow": "hidden",
     }
 
-    # Set the style of the Div that contains the left value on top
+    # # Set the style of the Div that contains the left value on top
     DIV_LEFT_VALUE = {
         "box-shadow": "4px 4px 4px 4px #D8D8D8",
         "padding": "20px",
         "height": "180px",
         "margin": "auto",
+        "width": "100%",
         "align": "center",
         "left": "50%",
+        "margin-up": "10px",
+        "margin-bottom": "10px",
+        "border-radius": "5px",
         "transform": "translate(52%, 0%)",
     }
 
@@ -87,8 +91,12 @@ class Styles:
         "padding": "20px",
         "height": "180px",
         "margin": "auto",
+        "width": "100%",
         "align": "center",
         "left": "50%",
+        "margin-up": "10px",
+        "margin-bottom": "10px",
+        "border-radius": "5px",
         "transform": "translate(56%, 0%)",
     }
 
@@ -100,7 +108,8 @@ class Styles:
         "margin": "center",
         "left-margin": "20%",
         "right-margin": "20%",
-        "max-width": "100%",
-        "max-height": "100%",
+        "max-width": "90%",
+        "max-height": "90%",
         "border-radius": "5px",
+        "border": "1px solid #f7f7f5",
     }
