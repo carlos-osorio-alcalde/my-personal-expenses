@@ -272,9 +272,10 @@ def get_transactions_with_labels(
             FROM [dbo].[transactions] AS t
             LEFT JOIN [dbo].[categories_trx] AS g
             ON (t.merchant = g.merchant AND t.datetime = g.datetime)
-            WHERE t.transaction_type = 'Compra' AND t.datetime >= ?
+            WHERE t.transaction_type = 'Compra' AND t.datetime >= ? 
+            AND g.category IS NOT NULL
             """,
-            date_from,
+            date_from.date(),
         )
         transactions_from_db = cursor.fetchall()
 
