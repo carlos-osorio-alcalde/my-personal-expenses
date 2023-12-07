@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'expenses/**'
+      - 'Dockerfile'
 
 jobs:
   build-and-push:
