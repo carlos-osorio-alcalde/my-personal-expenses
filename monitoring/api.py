@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import json
 import requests
+from typing import Literal
 from monitoring.email import send_email
 from monitoring.process_transactions import (
     get_transactions,
@@ -13,11 +14,21 @@ app = FastAPI()
 
 # Endpoint to get the daily transactions and save them labeled to the database
 @app.post("/label_and_save_transactions")
-def label_and_save_transactions():
+def label_and_save_transactions(
+    timeframe: Literal[
+        "daily", "weekly", "partial_weekly", "monthly", "from_origin"
+    ] = "daily"
+):
     """
     This endpoint gets the daily transactions and saves them labeled to the database
+
+    Parameters
+    ----------
+    timeframe : Literal["daily", "weekly", "partial_weekly",
+                        "monthly", "from_origin"]
+        The timeframe to obtain the expenses from.
     """
-    gross_transactions = get_transactions()
+    gross_transactions = get_transactions(timeframe=timeframe)
     gross_transactions = [
         trx
         for trx in gross_transactions

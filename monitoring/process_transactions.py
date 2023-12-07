@@ -17,7 +17,11 @@ load_dotenv()
 # URL of the API
 URL_API = "http://ec2-23-20-155-185.compute-1.amazonaws.com:5000"
 
+
 def get_transactions(
+    timeframe: Literal[
+        "daily", "weekly", "partial_weekly", "monthly", "from_origin"
+    ] = "daily",
     return_as_pandas: bool = False,
 ) -> Union[List[dict], pd.DataFrame]:
     """
@@ -25,6 +29,10 @@ def get_transactions(
 
     Parameters
     ----------
+    timeframe : Literal["daily", "weekly", "partial_weekly",
+                        "monthly", "from_origin"]
+        The timeframe to obtain the expenses from.
+
     return_as_pandas : bool, optional
         Whether to return the transactions as a pandas DataFrame or not,
         by default False
@@ -35,7 +43,7 @@ def get_transactions(
         The dataframe with all the transactions of the current day.
     """
     # Get the transactions of the current day
-    url = URL_API + "/expenses/get_full_transactions/?timeframe=daily"
+    url = URL_API + f"/expenses/get_full_transactions/?timeframe={timeframe}"
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {os.getenv('API_EXPENSES_TOKEN')}",
