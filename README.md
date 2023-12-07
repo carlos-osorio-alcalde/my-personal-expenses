@@ -1,6 +1,10 @@
 # My personal expense Tracker
 This personal project is designed to track and manage personal expenses by leveraging various components. The system is composed of several interconnected pieces that work together seamlessly to provide a comprehensive expense tracking solution.
 
+<p align="center">
+  <img src="img_repo.jpg" width="300"  title="Simple conversation">
+</p>
+
 ## Components
 ### 1. Expense Tracking API
 The core of the system is an API built with FastAPI and Docker. This API is responsible for scraping transaction information from bank emails, extracting relevant details, and storing the data into an Azure SQL Server Database. The API features various endpoints to handle different events, and it incorporates OAuth2 for authentication to ensure secure access.
