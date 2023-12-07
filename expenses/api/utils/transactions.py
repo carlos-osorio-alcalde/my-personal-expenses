@@ -41,6 +41,7 @@ def get_transactions(
         limit=None,
         date_to_search=date_to_search,
     )
+    
     if len(emails_list) > 0:
         print(email_from, TransactionEmail(emails_list[0]))
 
