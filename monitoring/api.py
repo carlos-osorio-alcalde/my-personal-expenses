@@ -21,7 +21,7 @@ def label_and_save_transactions():
     gross_transactions = [
         trx
         for trx in gross_transactions
-        if trx["transaction_type"] == "Compra" and "*" not in trx["merchant"]
+        if trx["transaction_type"] == "Compra"
     ]
 
     url_label_transactions = "https://label-categories.orangecliff-ed60441b.eastus.azurecontainerapps.io/get_category"  # noqa
