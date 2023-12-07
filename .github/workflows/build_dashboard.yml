@@ -1,9 +1,11 @@
-name: Build and Push API for base expenses
+name: Build and Push the dashboard app to the Azure Virtual Machine
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'dashboard/**'
 
 jobs:
   build-and-push:
