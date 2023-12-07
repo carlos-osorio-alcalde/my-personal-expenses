@@ -80,7 +80,7 @@ class TransactionEmail:
             )
         except ValueError:
             datetime_email = datetime.strptime(
-                datetime_email.replace(" (EDT)", ""),
+                datetime_email.replace(" (EDT)", "").replace(" (EST)", ""),
                 "%a, %d %b %Y %H:%M:%S %z",
             )
 
