@@ -1,5 +1,6 @@
 import os
 from typing import Literal
+import datetime
 
 import pandas as pd
 import requests
@@ -95,7 +96,10 @@ class MyExpenses:
         timeframe: Literal["daily", "weekly", "partial_weekly", "monthly", "from_origin"]
             The timeframe to get the expenses from
         """
-        url = MyExpenses.URL_API + f"/expenses/get_full_transactions/?timeframe={timeframe}"
+        url = (
+            MyExpenses.URL_API
+            + f"/expenses/get_full_transactions/?timeframe={timeframe}"
+        )
         headers = {"Authorization": f"Bearer {self._token}"}
         response = requests.get(url, headers=headers)
 
@@ -171,7 +175,10 @@ class MyExpenses:
             The labeled expenses from the API
 
         """
-        url = MyExpenses.URL_API + "/expenses/get_transactions_with_labels/?timeframe=from_origin"  # noqa
+        url = (
+            MyExpenses.URL_API
+            + "/expenses/get_transactions_with_labels/?timeframe=from_origin"
+        )  # noqa
         headers = {"Authorization": f"Bearer {self._token}"}
         response = requests.get(url, headers=headers)
 
@@ -258,17 +265,47 @@ class MyExpenses:
         df_expenses: pd.DataFrame
             The DataFrame of expenses
         """
-        # Get the expenses that are purchases
-        df_expenses_moving_average = df_expenses.copy()
+        if df_expenses.empty:
+            return pd.DataFrame(columns=["date", "amount_moving_average"])
+
+        # Get the date column from the datetime
+        df_expenses["date"] = pd.to_datetime(
+            df_expenses["datetime"], utc=True
+        ).dt.date
+
+        # Compute the consolidated expenses by date
+        df_expenses_agg = (
+            df_expenses.groupby("date")["amount"].sum().reset_index()
+        )
+
+        # Create an empty dataframe with a column of dates from
+        # the first date to the last date using the df_expenses_moving_average
+        df_expenses_moving_average = pd.DataFrame(
+            pd.date_range(
+                start=df_expenses["date"].min()
+                if df_expenses["date"].unique().shape[0] <= 180
+                else datetime.date(2018, 1, 1),
+                end=df_expenses["date"].max(),
+            ),
+            columns=["date"],
+        )
+        df_expenses_moving_average["date"] = pd.to_datetime(
+            df_expenses_moving_average["date"]
+        ).dt.date
+
+        # Merge the df_expenses_moving_average with the df_expenses
+        df_expenses_moving_average = df_expenses_moving_average.merge(
+            df_expenses_agg, on="date", how="left"
+        )
+
+        # Fill the null values with 0
+        df_expenses_moving_average["amount"].fillna(0, inplace=True)
 
         # Remove outliers. All the purchases in the quantile 0.99 are removed
         df_expenses_moving_average = df_expenses_moving_average[
             df_expenses_moving_average["amount"]
             <= df_expenses_moving_average["amount"].quantile(0.99)
         ]
-
-        # Sort the DataFrame by datetime
-        df_expenses_moving_average.sort_values(by="datetime", inplace=True)
 
         # Get the moving average of the expenses
         df_expenses_moving_average["amount_moving_average"] = (
@@ -278,9 +315,48 @@ class MyExpenses:
             .round(2)
         )
 
+        # Sort the DataFrame by datetime
+        df_expenses_moving_average.sort_values(by="date", inplace=True)
+
         return df_expenses_moving_average
+
+    @staticmethod
+    def get_weekly_expenses(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        This function returns the weekly expenses
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame of expenses
+
+        Returns
+        -------
+        pd.DataFrame
+            The weekly expenses
+        """
+        # Get the filtered dataframe with the weeks
+        df_ = df.copy()
+        df_["datetime"] = pd.to_datetime(df_["datetime"])
+        df_["week"] = df_["datetime"].dt.strftime("%Y-%U")
+        df_ = df_[df_["transaction_type"] != "Recepcion Transferencia"]
+
+        # Get the weekly expenses
+        df_weekly_expenses = (
+            df_.groupby("week")["amount"].sum().reset_index()
+        )
+
+        # Rename the columns
+        df_weekly_expenses.columns = ["week", "amount"]
+
+        # Change the sign of the amount
+        df_weekly_expenses["amount"] = -1 * df_weekly_expenses["amount"]
+
+        return df_weekly_expenses
 
 
 if __name__ == "__main__":
     expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
     df_expenses, df_labeled_expenses = expenses.get_expenses_tables()
+    df_expenses_moving_average = expenses.get_moving_average(df_expenses)
+    print(df_expenses_moving_average)
