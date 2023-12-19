@@ -1,9 +1,8 @@
-import os
-
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
-from dashboard.expenses import MyExpenses
 from dashboard.styles import Styles
 
 
@@ -23,7 +22,7 @@ def time_series_plot(df: pd.DataFrame) -> px.line:
     """
     fig_time_series = px.line(
         df,
-        x="datetime",
+        x="date",
         y="amount_moving_average",
         title="",
         template="plotly_white",
