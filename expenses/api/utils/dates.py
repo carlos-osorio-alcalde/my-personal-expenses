@@ -41,8 +41,9 @@ def get_date_from_search(
         date_to_search = now - datetime.timedelta(days=30)
 
     elif timeframe == "from_origin":
-        # This is used to get all the expenses from 4 years ago
-        date_to_search = now - datetime.timedelta(days=1461)
+        # This is used to get all the expenses from the origin of the
+        # account
+        date_to_search = now - datetime.timedelta(days=9999)
     else:
         raise ValueError(f"Timeframe {timeframe} not found")
 
