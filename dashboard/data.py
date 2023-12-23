@@ -9,7 +9,6 @@ from dashboard.expenses import MyExpenses
 
 def fetch_data(
     expenses: MyExpenses,
-    return_from_cache: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, str]:
     """
     This function returns the data to be used in the dashboard
@@ -26,7 +25,7 @@ def fetch_data(
     """
     # Load the data of the expenses
     df_expenses, df_labeled_expenses = expenses.get_expenses_tables(
-        return_amount=True, return_from_cache=return_from_cache
+        return_amount=True
     )
     updated_at = "(Last updated at: {})".format(
         expenses.last_time_update().strftime("%Y-%m-%d %H:%M:%S")

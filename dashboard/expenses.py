@@ -3,6 +3,7 @@ from typing import Literal
 import datetime
 
 import pandas as pd
+import numpy as np
 import requests
 from dotenv import load_dotenv
 
@@ -165,9 +166,19 @@ class MyExpenses:
         # Get the labeled expenses from the cache
         return pd.read_csv(MyExpenses.FILE_LABELED_EXPENSES, sep=";")
 
-    def _get_labeled_expenses_from_api(self) -> pd.DataFrame:
+    def _get_labeled_expenses_from_api(
+        self,
+        timeframe: Literal[
+            "daily", "weekly", "partial_weekly", "monthly", "from_origin"
+        ],
+    ) -> pd.DataFrame:
         """
         This method returns the labeled expenses
+
+        Parameters:
+        ----------
+        timeframe: Literal["daily", "weekly", "partial_weekly", "monthly", "from_origin"]
+            The timeframe to get the expenses from
 
         Returns:
         -------
@@ -177,7 +188,7 @@ class MyExpenses:
         """
         url = (
             MyExpenses.URL_API
-            + "/expenses/get_transactions_with_labels/?timeframe=from_origin"
+            + f"/expenses/get_transactions_with_labels/?timeframe={timeframe}"
         )  # noqa
         headers = {"Authorization": f"Bearer {self._token}"}
         response = requests.get(url, headers=headers)
@@ -187,6 +198,46 @@ class MyExpenses:
 
         # Get the response as a DataFrame
         return pd.DataFrame(response.json())
+
+    @staticmethod
+    def _get_appended_data(
+        expenses_file: str, df_to_append: pd.DataFrame
+    ) -> None:
+        """
+        This function appends the data to the cached files
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to append
+        """
+        # Replace nan values with None
+        df_to_append = df_to_append.replace({np.nan: None})
+
+        if os.path.exists(expenses_file):
+            # Read the data as a dataframe
+            df_cached = pd.read_csv(expenses_file, sep=";").drop_duplicates()
+            df_cached = df_cached.replace({np.nan: None})
+            df_cached["datetime"] = pd.to_datetime(df_cached["datetime"])
+
+            # Delete the file
+            os.remove(expenses_file)
+
+            # Append the data to the cached files
+            df_to_save = (
+                pd.concat([df_cached, df_to_append], ignore_index=True)
+                .drop_duplicates()
+                .reset_index(drop=True)
+            )
+        else:
+            df_to_save = df_to_append
+
+        # Save the data
+        df_to_save.drop_duplicates(["datetime", "merchant"]).to_csv(
+            expenses_file, sep=";", index=False
+        )
+
+        return df_to_save
 
     def last_time_update(self) -> pd.Timestamp:
         """
@@ -205,11 +256,7 @@ class MyExpenses:
 
     def get_expenses_tables(
         self,
-        timeframe: Literal[
-            "daily", "weekly", "partial_weekly", "monthly", "from_origin"
-        ] = "from_origin",
         return_amount: bool = True,
-        return_from_cache: bool = False,
     ) -> (pd.DataFrame, pd.DataFrame):
         """
         This method returns all expenses from the API
@@ -219,38 +266,51 @@ class MyExpenses:
         timeframe: Literal["daily", "weekly", "partial_weekly", "monthly", "from_origin"]
             The timeframe to get the expenses from
         """
-        # Check if the last update timestamp is greater than 30 minutes
-        if (
-            (pd.Timestamp.now() - self.last_time_update()).total_seconds()
-            > MyExpenses.TIME_TO_WAIT
-            or not os.path.exists(MyExpenses.FILE_EXPENSES)
-            or not os.path.exists(MyExpenses.FILE_LABELED_EXPENSES)
-        ) and not return_from_cache:
-            # Get the expenses from the API
-            df_expenses = self._get_expenses_from_api(timeframe)
-            df_expenses = self._modify_expenses_table(df_expenses)
 
-            # Get the labeled expenses from the API
-            df_labeled_expenses = self._get_labeled_expenses_from_api()
-            df_labeled_expenses = self._modify_expenses_labeled_table(
-                df_expenses, df_labeled_expenses, return_amount=return_amount
-            )
+        # Check if the cached files exist
+        if os.path.exists(MyExpenses.FILE_EXPENSES) and os.path.exists(
+            MyExpenses.FILE_LABELED_EXPENSES
+        ):
+            # Check if the last update timestam is greather
+            if (
+                pd.Timestamp.now() - self.last_time_update()
+            ).total_seconds() > MyExpenses.TIME_TO_WAIT:
+                api_timeframe = "daily"
+            else:
+                # If the last update timestamp is less than the time to wait,
+                # get the expenses from the cache
+                df_expenses = self._get_expenses_from_cache()
+                df_labeled_expenses = self._get_labeled_expenses_from_cache()
 
-            # Save the expenses and the labeled expenses in the cache
-            df_expenses.to_csv(
-                MyExpenses.FILE_EXPENSES, sep=";", index=False
-            )
-            df_labeled_expenses.to_csv(
-                MyExpenses.FILE_LABELED_EXPENSES, sep=";", index=False
-            )
-
-            # Save the last update datetime
-            with open(MyExpenses.FILE_LAST_UPDATE, "w") as f:
-                f.write(str(pd.Timestamp.now()))
+                return df_expenses, df_labeled_expenses
         else:
-            # If the last update timestamp is less than 30 minutes, get from the cache
-            df_expenses = self._get_expenses_from_cache()
-            df_labeled_expenses = self._get_labeled_expenses_from_cache()
+            api_timeframe = "from_origin"
+
+        # Get the expenses from the API
+        df_expenses = self._get_expenses_from_api(api_timeframe)
+        df_expenses = self._modify_expenses_table(df_expenses)
+
+        # Get the labeled expenses from the API
+        df_labeled_expenses = self._get_labeled_expenses_from_api(
+            api_timeframe
+        )
+        df_labeled_expenses = self._modify_expenses_labeled_table(
+            df_expenses,
+            df_labeled_expenses,
+            return_amount=return_amount,
+        )
+
+        # Save or append the expenses and the labeled expenses
+        df_expenses = self._get_appended_data(
+            MyExpenses.FILE_EXPENSES, df_expenses
+        )
+        df_labeled_expenses = self._get_appended_data(
+            MyExpenses.FILE_LABELED_EXPENSES, df_labeled_expenses
+        )
+
+        # Save the last update datetime
+        with open(MyExpenses.FILE_LAST_UPDATE, "w") as f:
+            f.write(str(pd.Timestamp.now()))
 
         return df_expenses, df_labeled_expenses
 
@@ -356,7 +416,7 @@ class MyExpenses:
 
 
 if __name__ == "__main__":
-    expenses = MyExpenses(token=os.getenv("TOKEN_EXPENSES_API"))
-    df_expenses, df_labeled_expenses = expenses.get_expenses_tables()
-    df_expenses_moving_average = expenses.get_moving_average(df_expenses)
-    print(df_expenses_moving_average)
+    expenses = pd.read_csv(
+        "dashboard/cached_expenses/df_expenses.csv", sep=";"
+    )
+    print(expenses.drop_duplicates().tail(20))
