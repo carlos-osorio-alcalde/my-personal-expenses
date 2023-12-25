@@ -233,7 +233,7 @@ class MyExpenses:
             df_to_save = df_to_append
 
         # Save the data
-        df_to_save.drop_duplicates(["datetime", "merchant"]).to_csv(
+        df_to_save.drop_duplicates().to_csv(
             expenses_file, sep=";", index=False
         )
 
