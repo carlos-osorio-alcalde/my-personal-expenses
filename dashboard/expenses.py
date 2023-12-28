@@ -69,6 +69,10 @@ class MyExpenses:
         pd.DataFrame
             The expenses table with made changes
         """
+        # Check if df_expenses is empty
+        if df_expenses.empty:
+            return df_expenses
+
         df_expenses["datetime"] = pd.to_datetime(df_expenses["datetime"])
 
         # Change the sign of the amount
@@ -129,6 +133,10 @@ class MyExpenses:
         pd.DataFrame
             The expenses table with made changes
         """
+        # Check if df_labeled_expenses is empty
+        if df_labeled_expenses.empty:
+            return df_labeled_expenses
+
         df_labeled_expenses["datetime"] = pd.to_datetime(
             df_labeled_expenses["datetime"]
         )
