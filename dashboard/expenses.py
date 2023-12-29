@@ -228,10 +228,12 @@ class MyExpenses:
             df_cached = df_cached.replace({np.nan: None})
             df_cached["datetime"] = pd.to_datetime(df_cached["datetime"])
 
-            # Delete the rows that have the current data
-            df_cached = df_cached[
-                ~df_cached["datetime"].isin(df_to_append["datetime"])
-            ]
+            # Check if df_to_append is empty
+            if not df_to_append.empty:
+                # Delete the rows that have the current data
+                df_cached = df_cached[
+                    ~df_cached["datetime"].isin(df_to_append["datetime"])
+                ]
 
             # Delete the file
             os.remove(expenses_file)
