@@ -290,7 +290,7 @@ class MyExpenses:
             if (
                 pd.Timestamp.now() - self.last_time_update()
             ).total_seconds() > MyExpenses.TIME_TO_WAIT:
-                api_timeframe = "daily"
+                api_timeframe = "monthly"
             else:
                 # If the last update timestamp is less than the time to wait,
                 # get the expenses from the cache
