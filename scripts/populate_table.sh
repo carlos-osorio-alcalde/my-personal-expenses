@@ -13,7 +13,7 @@ curl -X 'POST' \
 
 # Run the second curl command to check if there are transactions without labels
 result=$(curl -s -X 'GET' \
-  '$URL_API_EXPENSES/database/check_if_there_are_trxs_without_labels/?timeframe=monthly' \
+  '$URL_API_EXPENSES/database/check_if_there_are_trxs_without_labels' \
   -H 'accept: application/json' \
   -H 'Authorization: Bearer $BEARER_TOKEN' 
   
@@ -21,7 +21,7 @@ result=$(curl -s -X 'GET' \
 if "$result"; then
   # If true, run the third curl command
   curl -X 'POST' \
-    '$URL_API_MONITORING/label_and_save_transactions' \
+    '$URL_API_MONITORING/label_and_save_transactions/?timeframe=monthly' \
     -H 'accept: application/json' \
     -d ''
 else
