@@ -30,6 +30,6 @@ class QREmailProcessor(EmailProcessor):
         pattern = (
             r"transferencia con QR por (?P<purchase_amount>.*?), "
             r"desde cta (?P<payment_method>\d+) a cta (?P<merchant>\d+)."
-            r" (?P<datetime>\d{2}/\d{2}/\d{4} \d{2}:\d{2})."
+            r" (?P<datetime>\d{4}/\d{2}/\d{2} \d{2}:\d{2})."
         )
         return pattern
