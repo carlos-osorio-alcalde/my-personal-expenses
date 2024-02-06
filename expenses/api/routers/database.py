@@ -121,7 +121,6 @@ def populate_table(
             transactions = get_transactions(
                 email_from=email, date_to_search=date_to_search
             )
-            print(email, transactions)
 
             for transaction in transactions:
                 insert_data_into_database(

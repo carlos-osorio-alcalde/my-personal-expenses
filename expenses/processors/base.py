@@ -1,10 +1,10 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from expenses.constants import (
     TRANSACTION_MESSAGES_TYPES_,
-    TRANSACTION_TYPES_,
+    TRANSACTION_TYPES_NAMES_,
 )
 from expenses.core.transaction_email import TransactionEmail
 from expenses.processors.schemas import TransactionInfo
@@ -26,13 +26,13 @@ class EmailProcessor(ABC):
         self.transaction_email_text: str = self.email.str_message
         self.transaction_type: str = None
         self._is_income: bool = None
-        self.pattern: str = self._set_pattern()
+        self.pattern: Union[str, List] = self._set_pattern()
 
     def __str__(self):
         return f"{self.__class__.__name__}"
 
     @abstractmethod
-    def _set_pattern(self) -> str:
+    def _set_pattern(self) -> Union[str, List]:
         """
         This abstract method sets the regex pattern to extract the
         transaction information.
@@ -40,8 +40,8 @@ class EmailProcessor(ABC):
 
         Returns
         -------
-        str
-            The regex pattern.
+        Union[str, List]
+            The regex pattern or the possible regex patterns.
         """
         ...
 
@@ -90,7 +90,7 @@ class EmailProcessor(ABC):
 
         # Check if the string email contains some of the transaction types
         has_valid_transaction_type = self._has_valid_messages(
-            list(TRANSACTION_TYPES_.keys()), self.transaction_email_text
+            TRANSACTION_TYPES_NAMES_, self.transaction_email_text
         )
 
         # Check if the string email contains an amount with "$"
@@ -154,7 +154,13 @@ class EmailProcessor(ABC):
         re.Match
             The match object.
         """
-        return re.search(self.pattern, self.transaction_email_text)
+        if isinstance(self.pattern, list):
+            for pattern in self.pattern:
+                match = re.search(pattern, self.transaction_email_text)
+                if match:
+                    return match
+        else:
+            return re.search(self.pattern, self.transaction_email_text)
 
     def _get_transaction_values(self) -> Dict:
         """
