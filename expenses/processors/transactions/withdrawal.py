@@ -27,11 +27,18 @@ class WithdrawalEmailProcessor(EmailProcessor):
         str
             The pattern of the transaction type.
         """
-        # TODO: Extend this pattern to withdraw from the "Corresponsal"
-        pattern = (
-            r"(?i)Retiro por (?P<purchase_amount>.*?) en "
-            r"(?P<merchant>[\w\s.*\/]+)."
-            r"Hora (?P<time>\d{2}:\d{2}) (?P<date>\d{2}/\d{2}/\d{4})"
-            r" (?P<payment_method>T\.Deb \*\d+)"
-        )
-        return pattern
+        patterns = [
+            (
+                r"(?i)Retiro por (?P<purchase_amount>.*?) en "
+                r"(?P<merchant>[\w\s.*\/]+)."
+                r"Hora (?P<time>\d{2}:\d{2}) (?P<date>\d{2}/\d{2}/\d{4})"
+                r" (?P<payment_method>T\.Deb \*\d+)"
+            ),
+            (
+                r"Bancolombia informa retiro en "
+                r"Corresponsal (?P<merchant>[\w\s.*\/ÁÉÍÓÚÜÑáéíóúüñ]+)"
+                r" por (?P<purchase_amount>.*?) el (?P<date>\d{2}/\d{2}/\d{2}) "
+                r"a las (?P<time>\d{2}:\d{2})."
+            ),
+        ]
+        return patterns
