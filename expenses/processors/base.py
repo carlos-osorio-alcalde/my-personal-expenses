@@ -181,7 +181,9 @@ class EmailProcessor(ABC):
             )
             merchant = match.group("merchant") if match else "unknown"
             paynment_method = (
-                match.group("payment_method") if match else "unknown"
+                "unknown"
+                if match is None or match.group("payment_method") is None
+                else match.group("payment_method")
             )
             log_email_string = None
         else:

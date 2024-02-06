@@ -47,10 +47,9 @@ def insert_data_into_database(
             get_query_to_insert_values(), transaction + transaction[:-1]
         )
         cursor.commit()
-    except Exception:
+        return "Operation completed successfully."
+    except Exception as e:
         raise HTTPException(status_code=500, detail="Insertion failed.")
-
-    return "Operation completed successfully."
 
 
 @router.get("/test_connection", dependencies=[Depends(check_access_token)])
@@ -121,7 +120,6 @@ def populate_table(
             transactions = get_transactions(
                 email_from=email, date_to_search=date_to_search
             )
-
             for transaction in transactions:
                 insert_data_into_database(
                     cursor,
@@ -139,7 +137,7 @@ def populate_table(
         cursor.close()
         return "Operation completed successfully."
     except Exception:
-        raise HTTPException(status_code=500, detail="Connection failed.")
+        raise HTTPException(status_code=500, detail="The process failed.")
 
 
 @router.post("/add_transaction", dependencies=[Depends(check_access_token)])
