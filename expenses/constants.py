@@ -3,7 +3,26 @@ TRANSACTION_MESSAGES_TYPES_ = [
     "Bancolombia te informa",
     "Bancolombia informa",
     "Realizaste una transferencia",
+    "Bancolombia: ",
 ]
+
+# This list includes all the possible names of the transaction types.
+TRANSACTION_TYPES_NAMES_ = [
+    "Compra",
+    "Retiro",
+    "Pago",
+    "recepcion transferencia",
+    "QR",
+    "Transferencia",
+    "Pagaste",
+]
+
+# This mapping is used to identify relationships between transactions.
+# For example, the transaction type "Pago" also could be "Pagaste"
+# and the transaction type "Compra" also could be "Compraste".
+# The values of this diccionary must be part of the keys of the
+# TRANSACTION_TYPES_ dictionary.
+TRANSACTION_TYPES_MAPPING_ = {"Pagaste": "Pago"}
 
 
 # This is the dictionary that contains the transaction types and their
