@@ -38,7 +38,7 @@ class WithdrawalEmailProcessor(EmailProcessor):
                 r"Bancolombia informa retiro en "
                 r"Corresponsal (?P<merchant>[\w\s.*\/ÁÉÍÓÚÜÑáéíóúüñ]+)"
                 r" por (?P<purchase_amount>.*?) el (?P<date>\d{2}/\d{2}/\d{2}) "
-                r"a las (?P<time>\d{2}:\d{2})."
+                r"a las (?P<time>\d{2}:\d{2}). (?:\*(?P<payment_method>\d+))?"
             ),
         ]
         return patterns
