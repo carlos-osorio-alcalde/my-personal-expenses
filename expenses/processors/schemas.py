@@ -12,5 +12,5 @@ class TransactionInfo(BaseModel):
     amount: float
     merchant: str
     datetime: datetime.datetime
-    paynment_method: str
+    paynment_method: str | None
     email_log: str | None
