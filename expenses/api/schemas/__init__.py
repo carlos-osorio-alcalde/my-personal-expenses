@@ -5,6 +5,7 @@ from .expenses import (
     LabeledTransactionInfo,
     SummaryADayLikeToday,
     SummaryTransactionInfo,
+    LabeledTransactionInfoFull,
 )
 from .merchants import SummaryMerchant
 
@@ -16,4 +17,5 @@ __all__ = [
     "SummaryADayLikeToday",
     "AnomalyPredictionOutput",
     "LabeledTransactionInfo",
+    "LabeledTransactionInfoFull",
 ]
