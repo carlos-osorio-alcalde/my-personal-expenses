@@ -71,3 +71,17 @@ class LabeledTransactionInfo(BaseModel):
     datetime: datetime.datetime
     category: str
     similarity: float
+
+
+class LabeledTransactionInfoFull(BaseModel):
+    """
+    Class that represents the transaction information with the label.
+    """
+
+    transaction_type: str
+    amount: float
+    merchant: str
+    datetime: datetime.datetime
+    paynment_method: str | None
+    email_log: str | None
+    category: str | None

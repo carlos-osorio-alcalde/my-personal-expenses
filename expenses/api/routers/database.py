@@ -1,12 +1,16 @@
 import os
-from typing import Literal, Tuple
+from typing import Literal, Tuple, List
+import datetime
 
 import pyodbc
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 
-from expenses.api.schemas import AddTransactionInfo
+from expenses.api.schemas import (
+    AddTransactionInfo,
+    LabeledTransactionInfoFull,
+)
 from expenses.api.security import check_access_token
 from expenses.api.utils import (
     get_cursor,
@@ -188,7 +192,7 @@ async def add_transaction(transaction: AddTransactionInfo) -> str:
     "/check_if_there_are_trxs_without_labels",
     dependencies=[Depends(check_access_token)],
 )
-def are_there_transactions_without_label() -> bool:
+async def are_there_transactions_without_label() -> bool:
     """
     This function checks if there are transactions without labels.
 
@@ -221,5 +225,80 @@ def are_there_transactions_without_label() -> bool:
         cursor.close()
 
         return len(rows) > 0
+    except Exception:
+        raise HTTPException(status_code=500, detail="Connection failed.")
+
+
+@router.get(
+    "/get_transactions_with_labels",
+    dependencies=[Depends(check_access_token)],
+)
+async def get_transactions_with_labels(
+    start_date: datetime.date, end_date: datetime.date
+) -> List[LabeledTransactionInfoFull]:
+    """
+    This function gets the transactions with labels.
+
+    Parameters
+    ----------
+    start_date : datetime.date
+        The start date to search.
+    end_date : datetime.date
+        The end date to search.
+
+    Returns
+    -------
+    list
+        A list with the transactions with labels.
+    """
+    # Convert dates to format YYYY-MM-DD
+    start_date = start_date.strftime("%Y-%m-%d")
+    end_date = end_date.strftime("%Y-%m-%d")
+
+    try:
+        # Establish the connection
+        cursor = get_cursor()
+
+        # Obtain the rows
+        cursor.execute(
+            f"""
+            SELECT 
+                    t.transaction_type,
+                    t.amount,
+                    t.merchant,
+                    t.datetime,
+                    t.payment_method,
+                    t.email_log_id,
+                    g.category,
+                    g.similarity
+            FROM [dbo].[transactions] AS t
+            LEFT JOIN [dbo].[categories_trx] AS g
+            ON (CAST(t.datetime AS DATETIME) = CAST(g.datetime AS DATETIME) 
+                AND CAST(t.merchant AS VARCHAR) = CAST(g.merchant AS VARCHAR))
+            WHERE CAST(t.datetime AS DATE) BETWEEN '{start_date}' AND '{end_date}'
+            ORDER BY t.datetime DESC;
+            """
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+
+        # Get the transactions with the correct type
+        if len(rows) > 0:
+            transactions = [
+                LabeledTransactionInfoFull(
+                    transaction_type=str(transaction[0]),
+                    amount=transaction[1],
+                    merchant=str(transaction[2]),
+                    datetime=transaction[3],
+                    paynment_method=str(transaction[4]),
+                    email_log=transaction[5],
+                    category=str(transaction[6]),
+                )
+                for transaction in rows
+            ]
+        else:
+            transactions = []
+
+        return transactions
     except Exception:
         raise HTTPException(status_code=500, detail="Connection failed.")
