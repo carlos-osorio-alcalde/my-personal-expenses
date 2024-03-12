@@ -20,13 +20,13 @@ class QREmailProcessor(EmailProcessor):
         self.transaction_type = "QR"
         self._is_income = False
 
-    def _set_pattern(self) -> Union[str, None]:
+    def _set_pattern(self) -> Union[str, List]:
         """
         This function sets the pattern of the transaction type.
 
         Returns
         -------
-        str
+        Union[str, List]
             The pattern of the transaction type.
         """
         patterns = [
