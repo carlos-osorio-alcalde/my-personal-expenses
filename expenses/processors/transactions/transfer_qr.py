@@ -1,3 +1,5 @@
+from typing import List, Union
+
 from expenses.core.transaction_email import TransactionEmail
 from expenses.processors.base import EmailProcessor
 
@@ -18,7 +20,7 @@ class QREmailProcessor(EmailProcessor):
         self.transaction_type = "QR"
         self._is_income = False
 
-    def _set_pattern(self) -> str:
+    def _set_pattern(self) -> Union[str, None]:
         """
         This function sets the pattern of the transaction type.
 
@@ -27,9 +29,16 @@ class QREmailProcessor(EmailProcessor):
         str
             The pattern of the transaction type.
         """
-        pattern = (
-            r"transferencia con QR por (?P<purchase_amount>.*?), "
-            r"desde cta (?P<payment_method>\d+) a cta (?P<merchant>\d+)."
-            r" (?P<datetime>\d{4}/\d{2}/\d{2} \d{2}:\d{2})."
-        )
-        return pattern
+        patterns = [
+            (
+                r"transferencia con QR por (?P<purchase_amount>.*?), "
+                r"desde cta (?P<payment_method>\d+) a cta (?P<merchant>\d+)."
+                r" (?P<datetime>\d{4}/\d{2}/\d{2} \d{2}:\d{2}).",
+                (
+                    r"transferencia con QR por (?P<purchase_amount>.*?), "
+                    r"desde cta (?P<payment_method>\d+) a cta (?P<merchant>\d+)."
+                    r" (?P<datetime>\d{2}/\d{2}/\d{4} \d{2}:\d{2}).",
+                ),
+            )
+        ]
+        return patterns
