@@ -128,7 +128,9 @@ class EmailProcessor(ABC):
             The float amount.
         """
         # Delete the "$" symbol
-        value_str = value_str.replace("$", "")
+        value_str = (
+            value_str.replace("$", "").replace("COP", "").replace("USD", "")
+        )
 
         # Check if the comma or the dot appears first
         if "," in value_str and "." in value_str:
