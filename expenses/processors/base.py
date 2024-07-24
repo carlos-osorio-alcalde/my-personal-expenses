@@ -94,7 +94,11 @@ class EmailProcessor(ABC):
         )
 
         # Check if the string email contains an amount with "$"
-        has_valid_amount = "$" in self.transaction_email_text
+        has_valid_amount = (
+            "$" in self.transaction_email_text
+            or "COP" in self.transaction_email_text
+            or "USD" in self.transaction_email_text
+        )
 
         # Return True if all conditions are met, otherwise False
         return (
@@ -196,9 +200,11 @@ class EmailProcessor(ABC):
 
         return {
             "transaction_type": self.transaction_type,
-            "amount": self._convert_amount_to_float(purchase_amount)
-            if self._is_income
-            else -self._convert_amount_to_float(purchase_amount),
+            "amount": (
+                self._convert_amount_to_float(purchase_amount)
+                if self._is_income
+                else -self._convert_amount_to_float(purchase_amount)
+            ),
             "merchant": merchant,
             "datetime": self.email.date_message,
             "paynment_method": paynment_method,

@@ -1,3 +1,5 @@
+from typing import List, Union
+
 from expenses.core.transaction_email import TransactionEmail
 from expenses.processors.base import EmailProcessor
 
@@ -22,16 +24,16 @@ class PurchaseEmailProcessor(EmailProcessor):
         self.transaction_type = "Compra"
         self._is_income = False
 
-    def _set_pattern(self) -> str:
+    def _set_pattern(self) -> Union[str, List]:
         """
         This function sets the pattern of the transaction type.
 
         Returns
         -------
-        str
+        Union[str, List]
             The pattern of the transaction type.
         """
-        pattern = [
+        patterns = [
             (
                 r"(?i)Compra por (?P<purchase_amount>.*?) "
                 r"en (?P<merchant>[\w\s.*\/,-]+)"
@@ -54,4 +56,4 @@ class PurchaseEmailProcessor(EmailProcessor):
                 r" a T\.Cred) \*\d+))?"
             ),
         ]
-        return pattern
+        return patterns
