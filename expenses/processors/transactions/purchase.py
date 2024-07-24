@@ -31,11 +31,27 @@ class PurchaseEmailProcessor(EmailProcessor):
         str
             The pattern of the transaction type.
         """
-        pattern = (
-            r"(?i)Compra por (?P<purchase_amount>.*?) "
-            r"en (?P<merchant>[\w\s.*\/,-]+)"
-            r"(?: (?P<time>\d{2}:\d{2}). (?P<date>\d{2}/\d{2}/\d{4}))"
-            r"(?i)(?: (?P<payment_method>(?:T\.Cred|T\.Deb|compra afiliada"
-            r" a T\.Cred) \*\d+))?"
-        )
+        pattern = [
+            (
+                r"(?i)Compra por (?P<purchase_amount>.*?) "
+                r"en (?P<merchant>[\w\s.*\/,-]+)"
+                r"(?: (?P<time>\d{2}:\d{2}). (?P<date>\d{2}/\d{2}/\d{4}))"
+                r"(?i)(?: (?P<payment_method>(?:T\.Cred|T\.Deb|compra afiliada"
+                r" a T\.Cred) \*\d+))?"
+            ),
+            (
+                r"(?i)Compra por COP(?P<purchase_amount>.*?) "
+                r"en (?P<merchant>[\w\s.*\/,-]+)"
+                r"(?: (?P<time>\d{2}:\d{2}). (?P<date>\d{2}/\d{2}/\d{4}))"
+                r"(?i)(?: (?P<payment_method>(?:T\.Cred|T\.Deb|compra afiliada"
+                r" a T\.Cred) \*\d+))?"
+            ),
+            (
+                r"(?i)Compra por USD(?P<purchase_amount>.*?) "
+                r"en (?P<merchant>[\w\s.*\/,-]+)"
+                r"(?: (?P<time>\d{2}:\d{2}). (?P<date>\d{2}/\d{2}/\d{4}))"
+                r"(?i)(?: (?P<payment_method>(?:T\.Cred|T\.Deb|compra afiliada"
+                r" a T\.Cred) \*\d+))?"
+            ),
+        ]
         return pattern
