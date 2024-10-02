@@ -52,5 +52,17 @@ class PurchaseEmailProcessor(EmailProcessor):
                 r"(?: (?P<time>\d{2}:\d{2}). (?P<date>\d{2}/\d{2}/\d{4}))"
                 r"(?: (?P<payment_method>(?:T\.Cred|T\.Deb|compra afiliada a T\.Cred) \*\d+))?"
             ),
+            (
+                r"(?i)Compraste COP(?P<purchase_amount>.*?) "
+                r"en (?P<merchant>[\w\s.*\/,-]+)"
+                r"con tu (?P<payment_method>(?:T\.Cred|T\.Deb|compra afiliada a T\.Cred) \**\d+)"
+                r", el (?P<date>\d{2}\/\d{2}\/\d{4}) a las (?P<time>\d{2}:\d{2})"
+            ),
+            (
+                r"(?i)Compraste USD(?P<purchase_amount>.*?) "
+                r"en (?P<merchant>[\w\s.*\/,-]+)"
+                r"con tu (?P<payment_method>(?:T\.Cred|T\.Deb|compra afiliada a T\.Cred) \**\d+)"
+                r", el (?P<date>\d{2}\/\d{2}\/\d{4}) a las (?P<time>\d{2}:\d{2})"
+            ),
         ]
         return patterns
