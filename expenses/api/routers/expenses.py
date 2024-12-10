@@ -93,7 +93,7 @@ async def get_expenses(
 
 
 @router.get(
-    "/summary/historical",
+    "/summary-historical",
     response_model=SummaryADayLikeToday,
     dependencies=[Depends(check_access_token)],
 )
