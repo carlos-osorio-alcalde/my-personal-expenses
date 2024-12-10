@@ -39,7 +39,8 @@ def get_cursor(return_conn: bool = False) -> Union[pyodbc.Cursor, None]:
         )
         cursor = conn.cursor()
         return cursor if not return_conn else (conn, cursor)
-    except Exception:
+    except Exception as e:
+        print(e)
         return None
 
 

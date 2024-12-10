@@ -28,6 +28,7 @@ EMAILS_FROM_ = [
     "alertasynotificaciones@bancolombia.com.co",
 ]
 
+
 # Function to get the transactions from the database
 def get_gross_transactions(
     timeframe: Literal["daily", "weekly", "partial_weekly", "monthly"]
@@ -65,7 +66,7 @@ def get_gross_transactions(
 # Create the endpoint to get the summary of the expenses of the day, week or
 # month
 @router.get(
-    "/{timeframe}",
+    "/summary/{timeframe}",
     response_model=SummaryTransactionInfo,
     dependencies=[Depends(check_access_token)],
 )
@@ -92,7 +93,7 @@ async def get_expenses(
 
 
 @router.get(
-    "/a_day_like_today/",
+    "/summary/historical",
     response_model=SummaryADayLikeToday,
     dependencies=[Depends(check_access_token)],
 )
@@ -117,7 +118,7 @@ async def get_expenses_a_day_like_today() -> SummaryADayLikeToday:
 
 # Create the endpoint to get all the transactions of the current day
 @router.get(
-    "/get_full_transactions/",
+    "/full-transactions",
     response_model=List[TransactionInfo],
     dependencies=[Depends(check_access_token)],
 )
@@ -144,7 +145,7 @@ async def get_full_transactions(
 
 # Create the endpoint to get the transactions with the labels
 @router.get(
-    "/get_transactions_with_labels/",
+    "/labeled-transactions",
     response_model=List[LabeledTransactionInfo],
     dependencies=[Depends(check_access_token)],
 )

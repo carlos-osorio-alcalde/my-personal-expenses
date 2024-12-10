@@ -17,9 +17,7 @@ from expenses.api.utils import get_cursor, get_model
 router = APIRouter(prefix="/monitoring")
 
 
-@router.post(
-    "/retrain_anomaly_model", dependencies=[Depends(check_access_token)]
-)
+@router.post("/model", dependencies=[Depends(check_access_token)])
 def retrain_anomaly_model(
     max_samples: int, contamination: float, bootstrap: bool
 ) -> str:
@@ -90,7 +88,7 @@ def retrain_anomaly_model(
 
 
 @router.get(
-    "/predict_anomaly",
+    "/prediction",
     dependencies=[Depends(check_access_token)],
 )
 def predict_anomaly(

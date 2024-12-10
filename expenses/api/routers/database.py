@@ -5,6 +5,7 @@ import datetime
 import pyodbc
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 
 from expenses.api.schemas import (
@@ -51,13 +52,13 @@ def insert_data_into_database(
             get_query_to_insert_values(), transaction + transaction[:-1]
         )
         cursor.commit()
-        return "Operation completed successfully."
+        return JSONResponse(status_code=200, content={"message": "Success."})
     except Exception as e:
         raise HTTPException(status_code=500, detail="Insertion failed.")
 
 
-@router.get("/test_connection", dependencies=[Depends(check_access_token)])
-def test_connection() -> str:
+@router.get("/health", dependencies=[Depends(check_access_token)])
+def test_connection():
     """
     This function tests the connection to the database.
 
@@ -73,17 +74,23 @@ def test_connection() -> str:
         cursor.execute("SELECT TOP 1 * FROM transactions")
         rows = cursor.fetchall()
         cursor.close()
-        return f"Connection successful. This is the first row: {str(rows)}"
-    except Exception:
-        raise HTTPException(status_code=500, detail="Connection failed.")
+        return JSONResponse(
+            status_code=200, content={"message": "Connection sucessful"}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail="Connection failed. Details: " + str(e)
+        )
 
 
-@router.post("/populate_table/", dependencies=[Depends(check_access_token)])
+@router.post(
+    "/", dependencies=[Depends(check_access_token)], responses={500: {}}
+)
 def populate_table(
     timeframe: Literal[
         "daily", "weekly", "partial_weekly", "monthly", "from_origin"
     ]
-) -> str:
+):
     """
     This function populates the transactions table.
 
@@ -124,6 +131,12 @@ def populate_table(
             transactions = get_transactions(
                 email_from=email, date_to_search=date_to_search
             )
+            if len(transactions) == 0:
+                return JSONResponse(
+                    status_code=204,
+                    content={"message": "No transactions found."},
+                )
+
             for transaction in transactions:
                 insert_data_into_database(
                     cursor,
@@ -139,13 +152,17 @@ def populate_table(
 
         # Close the connection
         cursor.close()
-        return "Operation completed successfully."
+        return JSONResponse(
+            status_code=200,
+            content={"message": "Operation completed successfully."},
+        )
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=500, detail="The process failed.")
 
 
-@router.post("/add_transaction", dependencies=[Depends(check_access_token)])
+@router.post(
+    "/individual-transaction", dependencies=[Depends(check_access_token)]
+)
 async def add_transaction(transaction: AddTransactionInfo) -> str:
     """
     This function adds a transaction to the database.
@@ -184,13 +201,16 @@ async def add_transaction(transaction: AddTransactionInfo) -> str:
         )
         # Close the connection
         cursor.close()
-        return "Operation completed successfully."
+        return JSONResponse(
+            status_code=200,
+            content={"message": "Operation completed successfully."},
+        )
     except Exception:
         raise HTTPException(status_code=500, detail="Connection failed.")
 
 
 @router.get(
-    "/check_if_there_are_trxs_without_labels",
+    "/unlabeled-transactions",
     dependencies=[Depends(check_access_token)],
 )
 async def are_there_transactions_without_label() -> bool:
@@ -225,13 +245,15 @@ async def are_there_transactions_without_label() -> bool:
         rows = cursor.fetchall()
         cursor.close()
 
-        return len(rows) > 0
+        return JSONResponse(
+            status_code=200, content={"message": len(rows) > 0}
+        )
     except Exception:
         raise HTTPException(status_code=500, detail="Connection failed.")
 
 
 @router.get(
-    "/get_transactions_with_labels",
+    "/labeled-transactions",
     dependencies=[Depends(check_access_token)],
 )
 async def get_transactions_with_labels(
